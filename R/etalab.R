@@ -54,7 +54,7 @@ etalab_construct_url <- function(scale = "communes",
 etalab_get_data_url <- function(insee_code, data, ...){
 
   # scale
-  scale <- cdg_detect_insee_code(insee_code, T)
+  scale <- cdg_detect_insee_code(insee_code, T, F)
   if (scale == "communes"){
     loc <- cdg_construct_commune(insee_code)
   } else {
@@ -132,7 +132,7 @@ etalab_get_data_urls <- function(insee_code,     # vecteur de codes INSEE
   # Si data est NULL → toutes les données pour tous les codes INSEE
   if (is.null(data)) {
     res_list <- lapply(insee_code, function(code) {
-      scale <- cdg_detect_insee_code(code, scale = TRUE)
+      scale <- cdg_detect_insee_code(code, T, F)
       all_data <- cfg_get_data(scale, TRUE)$data
       urls <- vapply(all_data, function(d) {
         etalab_get_data_url(insee_code = code, data = d, ...)

@@ -52,5 +52,5 @@ data_sf <- get_cadastre_pci(communes = c("12345", "67890"), format = "edigeo")
 }
 }
 \seealso{
-\code{\link[=pci_get_feuille_urls(), cdg_download_archives(), cdg_read_edigeo(), cdg_read_dxf]{pci_get_feuille_urls(), cdg_download_archives(), cdg_read_edigeo(), cdg_read_dxf()}}
+\code{\link[=pci_get_feuille_urls(), cdg_download_archives(), read_edigeo(), read_dxf]{pci_get_feuille_urls(), cdg_download_archives(), read_edigeo(), read_dxf()}}
 }

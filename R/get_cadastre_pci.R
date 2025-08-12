@@ -28,7 +28,7 @@
 #' @importFrom sf st_read
 #' @importFrom utils download.file
 #'
-#' @seealso [pci_get_feuille_urls(), cdg_download_archives(), cdg_read_edigeo(), cdg_read_dxf()]
+#' @seealso [pci_get_feuille_urls(), cdg_download_archives(), read_edigeo(), read_dxf()]
 #'
 #' @examples
 #' \dontrun{
@@ -63,11 +63,12 @@ get_cadastre_pci <- function(communes,
     overwrite = overwrite,
     use_subdirs = FALSE
   )
+  extraction_path <- download_results[[1]]
 
   # 3. Lire tous les fichiers extraits dans extract_dir
   sf_data <- switch(format,
-                    dxf = cdg_read_dxf(extract_dir),
-                    edigeo = cdg_read_edigeo(extract_dir))
+                    dxf = read_dxf(extraction_path),
+                    edigeo = read_edigeo(extraction_path))
 
   return(sf_data)
 }

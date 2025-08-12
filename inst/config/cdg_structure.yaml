@@ -1,0 +1,60 @@
+cdg:
+  path: "https://cadastre.data.gouv.fr/data"
+  pci:
+    path: "dgfip-pci-vecteur"
+    formats:
+      dxf:
+        departements: {prefix: "dep",     extent: ".zip"}
+        feuilles:     {prefix: "dxf",     extent: ".tar.bz2"}
+      edigeo:
+        departements: {prefix: "dep",     extent: ".zip"}
+        feuilles:     {prefix: "edigeo",  extent: ".tar.bz2"}
+  etalab:
+    path: "etalab-cadastre"
+    formats:
+      shp:
+        departements: {prefix: "cadastre", extent: ".zip"}
+      geojson:
+        departements:
+          raw:
+            prefix: "pci"
+            extent: ".json.gz"
+            data: &raw_data
+              - batiment
+              - borne
+              - commune
+              - label
+              - lieudit
+              - numvoie
+              - parcelle
+              - ptcanv
+              - section
+              - subdfisc
+              - subdsect
+              - symblim
+              - tline
+              - tpoint
+              - tronfluv
+              - tronroute
+              - tsurf
+              - zoncommuni
+          proc:
+            prefix: "cadastre"
+            extent: ".json.gz"
+            data: &proc_data
+              - batiments
+              - lieux_dits
+              - parcelles
+              - prefixes_sections
+              - sections
+              - subdivisions_fiscales
+        communes:
+          raw:
+            prefix: "pci"
+            extent: ".json.gz"
+            data: *raw_data
+          proc:
+            prefix: "cadastre"
+            extent: ".json.gz"
+            data: *proc_data
+

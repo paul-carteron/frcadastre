@@ -2,32 +2,32 @@
 % Please edit documentation in R/pci.R
 \name{pci_get_dep_url}
 \alias{pci_get_dep_url}
-\title{Construire l'URL d'un département PCI}
+\title{Get PCI data URL for a specific department}
 \usage{
 pci_get_dep_url(departement, ...)
 }
 \arguments{
-\item{departement}{\code{character}.
-Code du département à utiliser. Doit appartenir à la liste \code{Rsequoia2::departements_2024$DEP}.}
+\item{departement}{Character. The department code (e.g., \code{"72"}).
+Must be a valid department listed in \code{departement_2025$DEP}.}
 
-\item{...}{Arguments supplémentaires passés à \code{\link{pci_construct_url}}.}
-
-\item{zip_prefix}{\code{character}.
-Préfixe du fichier zip. Par défaut \code{"dep"}.}
-
-\item{zip_ext}{\code{character}.
-Extension du fichier zip. Par défaut \code{".zip"}.}
+\item{...}{Additional arguments passed to \code{pci_construct_url()}.}
 }
 \value{
-\code{character}.
-Une URL construite sous forme de chaîne de caractères.
+A character string representing the constructed download URL
+for the specified department.
 }
 \description{
-Cette fonction génère l'URL d'accès aux données PCI pour un département donné.
+Constructs the download URL for PCI (Plan Cadastral Informatisé) data
+at the department scale for a given department code.
 }
 \details{
-La fonction vérifie que le département est valide avant de construire l'URL.
+Validates the department code against the known list of departments.
+Uses internal helper functions to build the correct archive prefix and URL.
 }
-\seealso{
-\code{\link[=pci_construct_url(), cdg_aggr_url]{pci_construct_url(), cdg_aggr_url()}}
+\examples{
+\dontrun{
+# Get URL for department 72
+url <- pci_get_dep_url("72")
+}
+
 }

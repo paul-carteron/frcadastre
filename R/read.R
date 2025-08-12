@@ -39,48 +39,6 @@ read_dxf <- function(path) {
   })
 }
 
-#' Read GeoJSON file(s) as an sf object
-#'
-#' This function reads a single GeoJSON/JSON file or all GeoJSON/JSON files
-#' in a directory and attempts to aggregate them into a single `sf` object.
-#'
-#' @param path `character` Path to a GeoJSON/JSON file or a directory containing such files.
-#'
-#' @return An `sf` object representing the spatial features read from the GeoJSON file(s),
-#' or a list of `sf` objects if aggregation fails.
-#'
-#' @importFrom sf st_read
-#'
-#' @seealso \code{\link[sf]{st_read}} for reading spatial vector data.
-#'
-#' @export
-#'
-read_geojson <- function(path) {
-
-  # If path is a single GeoJSON/JSON file, read and return it directly
-  if (file.exists(path) && grepl("\\.(geojson|json)$", path, ignore.case = TRUE)) {
-    return(sf::st_read(path, quiet = TRUE))
-  }
-
-  # Otherwise, assume path is a directory and list all GeoJSON/JSON files inside
-  files <- list.files(path, pattern = "\\.(geojson|json)$", full.names = TRUE, ignore.case = TRUE)
-  if (length(files) == 0) {
-    stop("No GeoJSON files found in directory ", path)
-  }
-
-  # Read all GeoJSON/JSON files as sf objects
-  layers <- lapply(files, function(f) sf::st_read(f, quiet = TRUE))
-
-  # Try to aggregate all layers into a single sf object
-  tryCatch({
-    aggregated <- do.call(rbind, layers)
-    return(aggregated)
-  }, error = function(e) {
-    warning("Failed to aggregate GeoJSON files: ", e$message)
-    return(layers)
-  })
-}
-
 #' Read EDIGEO data from a directory containing .THF files
 #'
 #' This function reads all layers from all .THF files in the specified directory,
@@ -163,4 +121,93 @@ read_edigeo <- function(edigeo_dir) {
   }
 
   return(final_layers)
+}
+
+#' Read and aggregate GeoJSON files from a directory or file path
+#'
+#' This function reads one or more GeoJSON or JSON files (optionally compressed
+#' with `.gz`) from a given path. Files are grouped and aggregated by their
+#' base name (after removing extensions and the prefix before the last `-`).
+#' If multiple files share the same base name, they are merged into a single
+#' `sf` object using `rbind`.
+#'
+#' @param path A file path or directory path. If a directory is provided, all
+#'   files matching the pattern `*.geojson`, `*.json`, `*.geojson.gz`,
+#'   or `*.json.gz will be read.
+#'
+#' @return A named list of `sf` objects, where names correspond to the
+#'   extracted base names from the files.
+#'   - Each element contains the spatial features from one or more files.
+#'
+#' @details
+#' File names are processed as follows:
+#' 1. Remove the `.gz` extension if present.
+#' 2. Remove the `.geojson` or `.json` extension.
+#' 3. Keep only the part after the last dash (`-`).
+#'
+#' Gzipped files are decompressed into a temporary location before reading.
+#'
+#' @examples
+#' \dontrun{
+#' # Read all GeoJSON files from a directory
+#' data_list <- read_geojson("path/to/geojson_dir")
+#'
+#' # Read a single GeoJSON file
+#' data_list <- read_geojson("path/to/file.geojson")
+#'
+#' # Access an aggregated dataset
+#' my_layer <- data_list[["numvoie"]]
+#' }
+#'
+#' @importFrom sf st_read
+#' @importFrom R.utils gunzip
+#'
+#' @export
+#'
+read_geojson <- function(path) {
+  read_file <- function(f) {
+    # Nom brut sans extensions
+    name <- basename(f)
+    name <- sub("\\.gz$", "", name, ignore.case = TRUE)
+    name <- sub("\\.(geojson|json)$", "", name, ignore.case = TRUE)
+
+    # On garde uniquement ce qui est après le dernier "-"
+    name <- sub(".*-", "", name)
+
+    # Si gz -> décompresse dans un temporaire
+    if (grepl("\\.gz$", f, ignore.case = TRUE)) {
+      tmp <- tempfile(fileext = ".geojson")
+      R.utils::gunzip(f, destname = tmp, remove = FALSE, overwrite = TRUE)
+      f <- tmp
+    }
+
+    list(name = name, data = sf::st_read(f, quiet = TRUE))
+  }
+
+  # Liste des fichiers
+  if (file.exists(path) && !dir.exists(path)) {
+    files <- path
+  } else {
+    files <- list.files(path, pattern = "\\.(geojson|json)(\\.gz)?$",
+                        full.names = TRUE, ignore.case = TRUE)
+  }
+  if (length(files) == 0) stop("No GeoJSON files found in ", path)
+
+  # Lecture et extraction nom + données
+  file_data <- lapply(files, read_file)
+  names_list <- sapply(file_data, `[[`, "name")
+  sf_list <- lapply(file_data, `[[`, "data")
+
+  # Agrégation par nom
+  aggregated <- lapply(unique(names_list), function(n) {
+    idx <- which(names_list == n)
+    if (length(idx) == 1) {
+      sf_list[[idx]]
+    } else {
+      do.call(rbind, sf_list[idx])
+    }
+  })
+  names(aggregated) <- unique(names_list)
+
+  aggregated
 }

@@ -2,29 +2,33 @@
 % Please edit documentation in R/pci.R
 \name{pci_construct_url}
 \alias{pci_construct_url}
-\title{Construire une URL pour les données PCI}
+\title{Construct a PCI data download URL}
 \usage{
 pci_construct_url(format = "edigeo", scale = "feuilles", ...)
 }
 \arguments{
-\item{format}{\code{character}.
-Format des données, parmi \code{"dxf"} ou \code{"edigeo"}.
-Par défaut \code{"edigeo"}.}
+\item{format}{Character. The desired data format. Allowed values are
+\code{"dxf"} and \code{"edigeo"}. Default is \code{"edigeo"}.}
 
-\item{scale}{\code{character}.
-Échelle des données, parmi \code{"departements"} ou \code{"feuilles"}.
-Par défaut \code{"feuilles"}.}
+\item{scale}{Character. The scale level of the data. Allowed values are
+\code{"departements"} and \code{"feuilles"}. Default is \code{"feuilles"}.}
 
-\item{...}{Arguments supplémentaires passés à \code{cdg_construct_url()}.}
+\item{...}{Additional arguments passed to \code{cdg_construct_url()}.}
 }
 \value{
-\code{character}.
-Une URL construite sous forme de chaîne de caractères.
+A character string representing the constructed download URL.
 }
 \description{
-Cette fonction construit une URL complète pour accéder aux données PCI
-en fonction du format et de l'échelle choisis.
+Constructs a URL for downloading PCI (Plan Cadastral Informatisé) data
+from the specified site, with options to select the data format and scale.
 }
-\seealso{
-\code{\link[=cdg_construct_url]{cdg_construct_url()}}
+\examples{
+\dontrun{
+# Construct URL for EDIGEO format at feuille scale
+url <- pci_construct_url(format = "edigeo", scale = "feuilles")
+
+# Construct URL for DXF format at departements scale
+url <- pci_construct_url(format = "dxf", scale = "departements")
+}
+
 }

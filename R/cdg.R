@@ -20,6 +20,7 @@
 #' @export
 #'
 cdg_aggr_url <- function(urls, base_url){
+  urls_clean <- urls[!sapply(urls, is.null)]
   paste(c(base_url, urls), collapse = "/")
 }
 
@@ -223,8 +224,7 @@ cdg_construct_url <- function(site,
                               millesime = NULL,
                               allowed_sites = c("pci", "etalab"),
                               allowed_formats,
-                              allowed_scales,
-                              ...) {
+                              allowed_scales) {
 
   # Validate inputs
   site <- match.arg(site, allowed_sites)
@@ -238,7 +238,7 @@ cdg_construct_url <- function(site,
 
   # Default millesime = latest available
   if (is.null(millesime)) {
-    millesimes <- cdg_detect_millesimes(site, ...)
+    millesimes <- cdg_detect_millesimes(site, allowed_sites)
     millesime <- tail(millesimes, 1)
   }
 
@@ -299,19 +299,16 @@ cdg_download_archive <- function(url,
                                  extract_dir = NULL,
                                  overwrite = FALSE) {
 
-  # Deduce file extension from URL
   ext <- tools::file_ext(url)
   if (ext == "") {
     warning("Unable to detect file extension; defaulting to '.zip'")
     ext <- "zip"
   }
 
-  # Create temporary file if destfile not provided
   if (is.null(destfile)) {
     destfile <- tempfile(fileext = paste0(".", ext))
   }
 
-  # Download file if not already downloaded or overwrite requested
   if (file.exists(destfile) && !overwrite) {
     message("File already exists: ", destfile)
   } else {
@@ -320,15 +317,37 @@ cdg_download_archive <- function(url,
     message("File downloaded: ", destfile)
   }
 
-  # Extract archive if requested
   if (extract) {
     if (is.null(extract_dir)) {
       extract_dir <- tempfile("extract_")
       dir.create(extract_dir)
     }
-    archive::archive_extract(destfile, dir = extract_dir)
-    message("Files extracted to: ", extract_dir)
-    return(extract_dir)
+
+    # Si fichier .gz (gzip simple), on décompresse "manuellement"
+    if (ext == "gz") {
+      # nom du fichier décompressé (sans .gz)
+      out_file <- file.path(extract_dir, sub("\\.gz$", "", basename(destfile)))
+
+      message("Decompressing gzip file to: ", out_file)
+
+      con_in <- gzfile(destfile, "rb")
+      con_out <- file(out_file, "wb")
+      while(length(buf <- readBin(con_in, what = raw(), n = 65536)) > 0) {
+        writeBin(buf, con_out)
+      }
+      close(con_in)
+      close(con_out)
+
+      message("File decompressed to: ", out_file)
+      return(extract_dir)
+
+    } else {
+      # Sinon extraction standard avec archive
+      archive::archive_extract(destfile, dir = extract_dir)
+      message("Files extracted to: ", extract_dir)
+      return(extract_dir)
+    }
+
   } else {
     info <- archive::archive(destfile)
     return(list(file = destfile, contents = info))
@@ -368,14 +387,20 @@ cdg_download_archives <- function(urls,
                                   overwrite = FALSE,
                                   use_subdirs = FALSE) {
   n <- length(urls)
+
+  # Crée un dossier temporaire unique pour CET appel
+  if (is.null(extract_dir)) {
+    extract_dir <- tempfile(pattern = "cdg_extract_")
+    dir.create(extract_dir, recursive = TRUE)
+  }
+
+  # Définit les noms de fichiers de destination
   if (is.null(destfiles)) {
-    destfiles <- file.path(tempdir(), paste0("file_", seq_len(n), ".zip"))
+    exts <- tools::file_ext(urls)
+    destfiles <- file.path(extract_dir, paste0("file_", seq_len(n), ".", exts))
   }
   if (length(destfiles) != n) {
     stop("`destfiles` must have the same length as `urls`")
-  }
-  if (is.null(extract_dir)) {
-    extract_dir <- tempdir()
   }
 
   results <- vector("list", n)
@@ -384,17 +409,10 @@ cdg_download_archives <- function(urls,
     message(sprintf("\n--- [%d/%d] Downloading: %s", i, n, urls[i]))
 
     if (use_subdirs) {
-      # Unique subdirectory for extraction
       sub_extract_dir <- file.path(extract_dir, paste0("extract_", i))
-      if (!dir.exists(sub_extract_dir)) {
-        dir.create(sub_extract_dir, recursive = TRUE)
-      }
+      if (!dir.exists(sub_extract_dir)) dir.create(sub_extract_dir, recursive = TRUE)
     } else {
-      # Extract all archives directly into extract_dir
       sub_extract_dir <- extract_dir
-      if (!dir.exists(sub_extract_dir)) {
-        dir.create(sub_extract_dir, recursive = TRUE)
-      }
     }
 
     results[[i]] <- cdg_download_archive(
@@ -406,7 +424,6 @@ cdg_download_archives <- function(urls,
     )
   }
 
-  # Return extraction directories used for each archive
   if (use_subdirs) {
     return(lapply(seq_len(n), function(i) file.path(extract_dir, paste0("extract_", i))))
   } else {
@@ -414,7 +431,7 @@ cdg_download_archives <- function(urls,
   }
 }
 
-#' Detect and validate INSEE code (commune or département)
+#' Detect and validate INSEE code (city or department)
 #'
 #' Checks if the provided INSEE code is valid among communes or départements,
 #' optionally returning the scale ("communes" or "departements").
@@ -434,20 +451,20 @@ cdg_detect_insee_code <- function(insee_code, scale = FALSE, verbose = TRUE) {
 
   if (nchar(insee_code) == 5) {
     if (!(insee_code %in% communes$COM)) {
-      stop(sprintf("Erreur : la commune '%s' n'est pas valide. Please run rcadastre::commune_2025",
+      stop(sprintf("Erreur : City '%s' not find. Please run rcadastre::commune_2025",
                    insee_code))
     } else {
-      if (verbose){message(sprintf("Commune '%s' = '%s' sélectionnée",
+      if (verbose){message(sprintf("City '%s' = '%s' selected",
                                    insee_code,
                                    communes[communes$COM == insee_code, "NCCENR"]))}
       if (scale){scale_detected <- "communes"}
     }
   } else if (nchar(insee_code) == 2 | nchar(insee_code) == 3) {
     if (!(insee_code %in% departements$DEP)) {
-      stop(sprintf("Erreur : le département '%s' n'est pas valide. Please run Rsequoia2::departement_2025",
+      stop(sprintf("Erreur : department '%s' not find. Please run Rsequoia2::departement_2025",
                    insee_code))
     } else {
-      if (verbose){message(sprintf("Département '%s' = '%s' sélectionné",
+      if (verbose){message(sprintf("Départment '%s' = '%s' selected",
                                    insee_code,
                                    departements[departements$DEP == insee_code, "LIBELLE"]))}
       if (scale){scale_detected <- "departements"}

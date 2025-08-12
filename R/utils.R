@@ -90,3 +90,32 @@ cfg_get_prefix_extent <- function(site,
     return(data_cfg)
   }
 }
+
+cfg_get_data <- function(scale = c("departements", "communes"),
+                         as_df = FALSE,
+                         config = cfg_load("cdg_structure.yaml")) {
+  scale <- match.arg(scale)
+
+  geojson <- config$cdg$etalab$formats$geojson[[scale]]
+  if (is.null(geojson)) stop("Groupe '", scale, "' non trouvé dans la config geojson.")
+
+  raw <- geojson$raw$data
+  proc <- geojson$proc$data
+
+  if (is.null(raw) || is.null(proc)) {
+    stop("Données raw ou proc manquantes dans la config pour le groupe '", scale, "'.")
+  }
+
+  if (as_df) {
+    df_raw <- data.frame(type = "raw", data = unlist(raw), stringsAsFactors = FALSE)
+    df_proc <- data.frame(type = "proc", data = unlist(proc), stringsAsFactors = FALSE)
+    df <- rbind(df_raw, df_proc)
+    rownames(df) <- NULL
+    return(df)
+  } else {
+    return(list(
+      raw_data = raw,
+      proc_data = proc
+    ))
+  }
+}

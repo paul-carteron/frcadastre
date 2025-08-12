@@ -11,8 +11,7 @@ cdg_construct_url(
   millesime = NULL,
   allowed_sites = c("pci", "etalab"),
   allowed_formats,
-  allowed_scales,
-  ...
+  allowed_scales
 )
 }
 \arguments{

@@ -2,7 +2,7 @@
 % Please edit documentation in R/cdg.R
 \name{cdg_detect_insee_code}
 \alias{cdg_detect_insee_code}
-\title{Detect and validate INSEE code (commune or département)}
+\title{Detect and validate INSEE code (city or department)}
 \usage{
 cdg_detect_insee_code(insee_code, scale = FALSE, verbose = TRUE)
 }

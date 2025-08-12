@@ -8,8 +8,8 @@ get_cadastre_pci(
   communes,
   feuilles = NULL,
   format = c("edigeo", "dxf"),
-  extract_dir = tempdir(),
-  overwrite = FALSE,
+  extract_dir = NULL,
+  overwrite = TRUE,
   ...
 )
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/pci.R
 \name{pci_get_feuille_url}
 \alias{pci_get_feuille_url}
-\title{Obtenir l'URL d'une feuille PCI pour une commune donnée}
+\title{Get PCI feuille archive URLs for a commune}
 \usage{
 pci_get_feuille_url(
   commune,
@@ -13,31 +13,36 @@ pci_get_feuille_url(
 )
 }
 \arguments{
-\item{commune}{\code{character}.
-Code INSEE de la commune (ex: "02120").}
+\item{commune}{Character. Commune code (e.g., INSEE code).}
 
-\item{feuille}{\code{character}.
-Nom de la feuille PCI (sans préfixe ni extension).}
+\item{feuille}{Character or NULL. Specific feuille(s) to get URLs for. If set to \code{"?"}, an interactive
+menu is displayed allowing the user to select one or more feuilles.}
 
-\item{...}{Arguments supplémentaires passés à \code{pci_construct_url()}.}
+\item{format}{Character. Data format, either \code{"edigeo"} or \code{"dxf"}. Default is \code{"edigeo"}.}
 
-\item{bz2_prefix}{\code{character}.
-Préfixe du fichier archive (par défaut \code{"edigeo-"}).}
+\item{skip}{Logical. Passed to \code{pci_choose_feuilles()}. If TRUE, skips prefix/suffix in feuille names.
+Default is TRUE.}
 
-\item{bz2_ext}{\code{character}.
-Extension du fichier archive (par défaut \code{".tar.bz2"}).}
+\item{...}{Additional arguments passed to underlying functions.}
 }
 \value{
-\code{character}.
-Une URL complète vers la feuille PCI.
+Character vector of URLs for the requested feuille archives.
 }
 \description{
-Cette fonction construit l'URL d'accès à une feuille PCI spécifique pour une commune.
+Retrieve URLs for one or multiple PCI (Plan Cadastral Informatisé) feuille (sheet) archives
+for a given commune and format.
 }
 \details{
-La fonction vérifie que la feuille demandée existe parmi celles détectées pour la commune,
-sinon elle génère une erreur.
+If \code{feuille} is \code{"?"}, the user is prompted interactively to select one or multiple feuilles.
+The function verifies availability of the requested feuilles before generating their URLs.
 }
-\seealso{
-\code{\link[=pci_construct_url(), pci_detect_feuilles(), cdg_construct_commune(), cdg_aggr_url]{pci_construct_url(), pci_detect_feuilles(), cdg_construct_commune(), cdg_aggr_url()}}
+\examples{
+\dontrun{
+# Get URLs for specific feuilles
+urls <- pci_get_feuille_url("72187", feuille = c("numvoie1", "numvoie2"))
+
+# Interactively select feuilles
+urls <- pci_get_feuille_url("72187", feuille = "?")
+}
+
 }

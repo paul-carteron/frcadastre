@@ -40,8 +40,8 @@
 get_cadastre_pci <- function(communes,
                              feuilles = NULL,
                              format = c("edigeo", "dxf"),
-                             extract_dir = tempdir(),
-                             overwrite = FALSE,
+                             extract_dir = NULL,
+                             overwrite = TRUE,
                              ...) {
 
   format <- match.arg(format)
@@ -60,7 +60,8 @@ get_cadastre_pci <- function(communes,
     urls = urls,
     extract = TRUE,
     extract_dir = extract_dir,
-    overwrite = overwrite
+    overwrite = overwrite,
+    use_subdirs = FALSE
   )
 
   # 3. Lire tous les fichiers extraits dans extract_dir

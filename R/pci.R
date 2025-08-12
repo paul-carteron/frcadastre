@@ -1,22 +1,24 @@
-#' Construire une URL pour les données PCI
+#' Construct a PCI data download URL
 #'
-#' Cette fonction construit une URL complète pour accéder aux données PCI
-#' en fonction du format et de l'échelle choisis.
+#' Constructs a URL for downloading PCI (Plan Cadastral Informatisé) data
+#' from the specified site, with options to select the data format and scale.
 #'
-#' @param format `character`.
-#' Format des données, parmi ``"dxf"`` ou ``"edigeo"``.
-#' Par défaut ``"edigeo"``.
+#' @param format Character. The desired data format. Allowed values are
+#'   `"dxf"` and `"edigeo"`. Default is `"edigeo"`.
+#' @param scale Character. The scale level of the data. Allowed values are
+#'   `"departements"` and `"feuilles"`. Default is `"feuilles"`.
+#' @param ... Additional arguments passed to `cdg_construct_url()`.
 #'
-#' @param scale `character`.
-#' Échelle des données, parmi ``"departements"`` ou ``"feuilles"``.
-#' Par défaut ``"feuilles"``.
-#' @param ...
-#' Arguments supplémentaires passés à `cdg_construct_url()`.
+#' @return A character string representing the constructed download URL.
 #'
-#' @return  `character`.
-#' Une URL construite sous forme de chaîne de caractères.
+#' @examples
+#' \dontrun{
+#' # Construct URL for EDIGEO format at feuille scale
+#' url <- pci_construct_url(format = "edigeo", scale = "feuilles")
 #'
-#' @seealso [cdg_construct_url()]
+#' # Construct URL for DXF format at departements scale
+#' url <- pci_construct_url(format = "dxf", scale = "departements")
+#' }
 #'
 #' @export
 #'
@@ -33,26 +35,27 @@ pci_construct_url <- function(format = "edigeo",
   )
 }
 
-#' Construire l'URL d'un département PCI
+#' Get PCI data URL for a specific department
 #'
-#' Cette fonction génère l'URL d'accès aux données PCI pour un département donné.
+#' Constructs the download URL for PCI (Plan Cadastral Informatisé) data
+#' at the department scale for a given department code.
 #'
-#' @param departement `character`.
-#' Code du département à utiliser. Doit appartenir à la liste ``Rsequoia2::departements_2024$DEP``.
-#' @param zip_prefix `character`.
-#' Préfixe du fichier zip. Par défaut ``"dep"``.
-#' @param zip_ext `character`.
-#' Extension du fichier zip. Par défaut ``".zip"``.
-#' @param ...
-#' Arguments supplémentaires passés à \code{\link{pci_construct_url}}.
+#' @param departement Character. The department code (e.g., `"72"`).
+#'   Must be a valid department listed in `departement_2025$DEP`.
+#' @param ... Additional arguments passed to `pci_construct_url()`.
 #'
-#' @return `character`.
-#' Une URL construite sous forme de chaîne de caractères.
+#' @return A character string representing the constructed download URL
+#'   for the specified department.
 #'
 #' @details
-#' La fonction vérifie que le département est valide avant de construire l'URL.
+#' Validates the department code against the known list of departments.
+#' Uses internal helper functions to build the correct archive prefix and URL.
 #'
-#' @seealso  [pci_construct_url(), cdg_aggr_url()]
+#' @examples
+#' \dontrun{
+#' # Get URL for department 72
+#' url <- pci_get_dep_url("72")
+#' }
 #'
 #' @export
 #'
@@ -79,6 +82,29 @@ pci_get_dep_url <- function(departement,
   cdg_aggr_url(zip, pci_url)
 }
 
+#' Get PCI data URLs for multiple departments
+#'
+#' Constructs download URLs for PCI (Plan Cadastral Informatisé) data
+#' at the department scale for a vector of department codes.
+#'
+#' @param departements Character vector. Department codes (e.g., `c("72", "73")`).
+#'   Each must be a valid department listed in `departement_2025$DEP`.
+#' @param ... Additional arguments passed to `pci_get_dep_url()`.
+#'
+#' @return A named character vector of URLs corresponding to each department code.
+#'
+#' @details
+#' Internally calls `pci_get_dep_url()` for each department code and
+#' returns the resulting URLs in a vector.
+#'
+#' @examples
+#' \dontrun{
+#' # Get URLs for multiple departments
+#' urls <- pci_get_dep_urls(c("72", "73"))
+#' }
+#'
+#' @export
+#'
 pci_get_dep_urls <- function(departements, ...) {
   vapply(
     departements,
@@ -124,6 +150,34 @@ pci_detect_feuilles <- function(commune,
   return(links)
 }
 
+#' Detect PCI feuille archives for a commune
+#'
+#' Retrieve the list of available PCI (Plan Cadastral Informatisé) feuille (sheet) archive names
+#' for a given commune and format.
+#'
+#' @param commune Character. Commune code (e.g., INSEE code).
+#' @param format Character. Data format, either `"edigeo"` or `"dxf"`. Default is `"edigeo"`.
+#' @param skip Logical. If TRUE, strips the prefix (`edigeo-` or `dxf-`) and suffix (`.tar.bz2`) from the archive names.
+#'   Default is FALSE.
+#' @param ... Additional arguments passed to `pci_construct_url()`.
+#'
+#' @return Character vector of archive names (with or without prefix/suffix depending on `skip`).
+#'
+#' @details
+#' This function constructs the URL for PCI feuille scale data for the specified commune and format,
+#' then detects and returns the available archive links.
+#'
+#' @examples
+#' \dontrun{
+#' # List available Edigeo feuille archives for a commune
+#' archives <- pci_detect_feuilles("72187")
+#'
+#' # Get archive names without prefix and suffix
+#' archives_clean <- pci_detect_feuilles("72187", skip = TRUE)
+#' }
+#'
+#' @export
+#'
 pci_choose_feuilles <- function(commune,
                                 format = "edigeo",
                                 feuille = NULL,
@@ -163,29 +217,33 @@ pci_choose_feuilles <- function(commune,
   return(feuille)
 }
 
-#' Obtenir l'URL d'une feuille PCI pour une commune donnée
+#' Get PCI feuille archive URLs for a commune
 #'
-#' Cette fonction construit l'URL d'accès à une feuille PCI spécifique pour une commune.
+#' Retrieve URLs for one or multiple PCI (Plan Cadastral Informatisé) feuille (sheet) archives
+#' for a given commune and format.
 #'
-#' @param commune `character`.
-#' Code INSEE de la commune (ex: "02120").
-#' @param feuille `character`.
-#' Nom de la feuille PCI (sans préfixe ni extension).
-#' @param bz2_prefix `character`.
-#' Préfixe du fichier archive (par défaut `"edigeo-"`).
-#' @param bz2_ext `character`.
-#' Extension du fichier archive (par défaut `".tar.bz2"`).
-#' @param ...
-#' Arguments supplémentaires passés à `pci_construct_url()`.
+#' @param commune Character. Commune code (e.g., INSEE code).
+#' @param feuille Character or NULL. Specific feuille(s) to get URLs for. If set to `"?"`, an interactive
+#'   menu is displayed allowing the user to select one or more feuilles.
+#' @param format Character. Data format, either `"edigeo"` or `"dxf"`. Default is `"edigeo"`.
+#' @param skip Logical. Passed to `pci_choose_feuilles()`. If TRUE, skips prefix/suffix in feuille names.
+#'   Default is TRUE.
+#' @param ... Additional arguments passed to underlying functions.
 #'
-#' @return `character`.
-#' Une URL complète vers la feuille PCI.
+#' @return Character vector of URLs for the requested feuille archives.
 #'
 #' @details
-#' La fonction vérifie que la feuille demandée existe parmi celles détectées pour la commune,
-#' sinon elle génère une erreur.
+#' If `feuille` is `"?"`, the user is prompted interactively to select one or multiple feuilles.
+#' The function verifies availability of the requested feuilles before generating their URLs.
 #'
-#' @seealso [pci_construct_url(), pci_detect_feuilles(), cdg_construct_commune(), cdg_aggr_url()]
+#' @examples
+#' \dontrun{
+#' # Get URLs for specific feuilles
+#' urls <- pci_get_feuille_url("72187", feuille = c("numvoie1", "numvoie2"))
+#'
+#' # Interactively select feuilles
+#' urls <- pci_get_feuille_url("72187", feuille = "?")
+#' }
 #'
 #' @export
 #'
@@ -239,6 +297,48 @@ pci_get_feuille_url <- function(commune,
   return(urls)
 }
 
+#' Get PCI feuille archive URLs for multiple communes
+#'
+#' Retrieve URLs for feuille (sheet) archives for multiple communes in the PCI dataset,
+#' optionally filtered by specific feuilles per commune.
+#'
+#' @param communes Character vector. Vector of allowed commune codes (e.g., INSEE codes).
+#' @param feuilles NULL or list. If NULL (default), retrieves all feuilles for all communes.
+#'   Otherwise, a list specifying feuilles per commune. The list can be named (names are commune codes)
+#'   or unnamed (must have the same length as `communes`, each element is feuilles for the corresponding commune).
+#' @param format Character. Data format, either `"edigeo"` or `"dxf"`. Default is `"edigeo"`.
+#' @param skip Logical. Passed to `pci_get_feuille_url()`. If TRUE, skips prefix/suffix in feuille names.
+#'   Default is TRUE.
+#' @param ... Additional arguments passed to underlying functions.
+#'
+#' @return A data.frame with columns:
+#'   - `commune`: commune code
+#'   - `url`: URL of the feuille archive
+#'
+#' @details
+#' If `feuilles` is NULL, all feuilles for all communes are returned.
+#' If `feuilles` is a named list, only the specified feuilles per commune are returned.
+#' If unnamed, the length of `feuilles` must match `communes`, and each element corresponds to feuilles for that commune.
+#'
+#' @examples
+#' \dontrun{
+#' # Get all feuilles URLs for communes
+#' df_all <- pci_get_feuille_urls(c("72187", "75056"))
+#'
+#' # Get specific feuilles for communes (named list)
+#' df_some <- pci_get_feuille_urls(
+#'   communes = c("72187", "75056"),
+#'   feuilles = list("72187" = c("feuille1", "feuille2"), "75056" = "feuilleA")
+#' )
+#'
+#' # Get feuilles with unnamed list (matching communes order)
+#' df_unnamed <- pci_get_feuille_urls(
+#'   communes = c("72187", "75056"),
+#'   feuilles = list(c("feuille1", "feuille2"), NULL)
+#' )
+#' }
+#'
+#' @export
 pci_get_feuille_urls <- function(communes,   # vecteur de communes autorisées (pour contrôle)
                                  feuilles = NULL,  # liste nommée OU non nommée : feuilles par commune, ou NULL = toutes
                                  format = "edigeo",

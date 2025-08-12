@@ -2,21 +2,49 @@
 % Please edit documentation in R/read.R
 \name{read_geojson}
 \alias{read_geojson}
-\title{Read GeoJSON file(s) as an sf object}
+\title{Read and aggregate GeoJSON files from a directory or file path}
 \usage{
 read_geojson(path)
 }
 \arguments{
-\item{path}{\code{character} Path to a GeoJSON/JSON file or a directory containing such files.}
+\item{path}{A file path or directory path. If a directory is provided, all
+files matching the pattern \verb{*.geojson}, \verb{*.json}, \verb{*.geojson.gz},
+or `*.json.gz will be read.}
 }
 \value{
-An \code{sf} object representing the spatial features read from the GeoJSON file(s),
-or a list of \code{sf} objects if aggregation fails.
+A named list of \code{sf} objects, where names correspond to the
+extracted base names from the files.
+\itemize{
+\item Each element contains the spatial features from one or more files.
+}
 }
 \description{
-This function reads a single GeoJSON/JSON file or all GeoJSON/JSON files
-in a directory and attempts to aggregate them into a single \code{sf} object.
+This function reads one or more GeoJSON or JSON files (optionally compressed
+with \code{.gz}) from a given path. Files are grouped and aggregated by their
+base name (after removing extensions and the prefix before the last \code{-}).
+If multiple files share the same base name, they are merged into a single
+\code{sf} object using \code{rbind}.
 }
-\seealso{
-\code{\link[sf]{st_read}} for reading spatial vector data.
+\details{
+File names are processed as follows:
+\enumerate{
+\item Remove the \code{.gz} extension if present.
+\item Remove the \code{.geojson} or \code{.json} extension.
+\item Keep only the part after the last dash (\code{-}).
+}
+
+Gzipped files are decompressed into a temporary location before reading.
+}
+\examples{
+\dontrun{
+# Read all GeoJSON files from a directory
+data_list <- read_geojson("path/to/geojson_dir")
+
+# Read a single GeoJSON file
+data_list <- read_geojson("path/to/file.geojson")
+
+# Access an aggregated dataset
+my_layer <- data_list[["numvoie"]]
+}
+
 }

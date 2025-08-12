@@ -12,8 +12,6 @@ cdg:
   etalab:
     path: "etalab-cadastre"
     formats:
-      shp:
-        departements: {prefix: "cadastre", extent: ".zip"}
       geojson:
         departements:
           raw:

@@ -1,3 +1,4 @@
+### URL section ----
 #' Construct a PCI data download URL
 #'
 #' Constructs a URL for downloading PCI (Plan Cadastral Informatisé) data
@@ -37,6 +38,7 @@ pci_construct_url <- function(format = "edigeo",
   )
 }
 
+### Department section ----
 #' Get PCI data URL for a specific department
 #'
 #' Constructs the download URL for PCI (Plan Cadastral Informatisé) data
@@ -123,6 +125,7 @@ pci_get_dep_urls <- function(departements, ...) {
   )
 }
 
+### Feuilles section ----
 #' Detect available PCI sheets for a municipality
 #'
 #' This function returns the list of available PCI sheets for a given municipality.

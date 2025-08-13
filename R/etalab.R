@@ -1,3 +1,4 @@
+### URL section ----
 #' Construct Etalab data URL
 #'
 #' Constructs a URL to access Etalab data for a specified scale.
@@ -30,6 +31,7 @@ etalab_construct_url <- function(scale = "communes",
   )
 }
 
+### Data section ----
 #' Get Etalab data URL for a given INSEE code and data type
 #'
 #' Constructs the download URL for Etalab data based on the INSEE code and requested data type.

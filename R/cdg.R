@@ -1,3 +1,4 @@
+### URL section ----
 #' Aggregate URL Components into a Single URL
 #'
 #' This function concatenates a base URL with one or more relative URL components
@@ -24,6 +25,94 @@ cdg_aggr_url <- function(urls, base_url){
   paste(c(base_url, urls), collapse = "/")
 }
 
+#' Construct a Data Download URL
+#'
+#' Builds a URL for downloading data from a specified site, format, scale,
+#' and optionally a specific "millesime" (data version).
+#'
+#' @param site `character`. Site identifier. Must be one of `allowed_sites`.
+#' @param format `character`. Data format. Must be one of `allowed_formats`.
+#' @param scale `character`. Data scale. Must be one of `allowed_scales`.
+#' @param millesime `character` or `NULL`. The desired data version.
+#'   If `NULL`, the most recent millesime is used.
+#' @param allowed_sites `character`. Vector of allowed site identifiers.
+#'   Defaults to `c("pci", "etalab")`.
+#' @param allowed_formats `character`. Vector of allowed formats.
+#' @param allowed_scales `character`. Vector of allowed scales.
+#' @param ... Additional arguments passed to \code{\link{cdg_detect_millesimes}}.
+#'
+#' @return A `character` string representing the full download URL.
+#'
+#' @details
+#' - The format `"shp"` is not available for the `"communes"` scale.
+#' - The `millesime` parameter can be set explicitly, or defaults to the
+#'   latest available.
+#'
+#' @seealso [cdg_detect_millesimes(), cdg_aggr_url(), cdg_get_path()]
+#'
+#' @examples
+#' \dontrun{
+#' cdg_construct_url(
+#'   site = "pci",
+#'   format = "gpkg",
+#'   scale = "departements",
+#'   allowed_formats = c("gpkg", "shp"),
+#'   allowed_scales = c("communes", "departements")
+#' )
+#' }
+#'
+#' @export
+#'
+cdg_construct_url <- function(site,
+                              format,
+                              scale,
+                              millesime = NULL,
+                              allowed_sites = c("pci", "etalab"),
+                              allowed_formats,
+                              allowed_scales) {
+
+  # Validate inputs
+  site <- match.arg(site, allowed_sites)
+  format <- match.arg(format, allowed_formats)
+  scale <- match.arg(scale, allowed_scales)
+
+  # Specific rule: 'shp' not available for 'communes'
+  if (format == "shp" && scale == "communes") {
+    stop("The format 'shp' is not available for the 'communes' scale.")
+  }
+
+  # Default millesime = latest available
+  if (is.null(millesime)) {
+    millesimes <- cdg_detect_millesimes(site, allowed_sites)
+    millesime <- tail(millesimes, 1)
+  }
+
+  urls <- c(millesime, format, scale)
+  cdg_aggr_url(urls, base_url = cdg_get_path(site))
+}
+
+#' Construct a Commune Path String
+#'
+#' Constructs a path string for a given commune code by prepending
+#' the department code (first two characters) and joining them with a slash.
+#'
+#' @param commune `character`.
+#' A commune code, typically a string where the first two characters represent the department code.
+#'
+#' @return A `character` string combining department and commune codes separated by a slash.
+#'
+#' @examples
+#' cdg_construct_commune("75056")
+#' # Returns "75/75056"
+#'
+#' @export
+#'
+cdg_construct_commune <- function(commune){
+  dep <- substr(commune, 1, 2)
+  paste(c(dep, commune), collapse = "/")
+}
+
+### Milesime section ----
 #' Detect and Extract Links from a Webpage
 #'
 #' Reads the content of a webpage from a given URL and extracts all unique hyperlinks (href attributes).
@@ -182,110 +271,22 @@ cdg_choose_millesime <- function(site,
   return(millesime)
 }
 
-#' Construct a Data Download URL
-#'
-#' Builds a URL for downloading data from a specified site, format, scale,
-#' and optionally a specific "millesime" (data version).
-#'
-#' @param site `character`. Site identifier. Must be one of `allowed_sites`.
-#' @param format `character`. Data format. Must be one of `allowed_formats`.
-#' @param scale `character`. Data scale. Must be one of `allowed_scales`.
-#' @param millesime `character` or `NULL`. The desired data version.
-#'   If `NULL`, the most recent millesime is used.
-#' @param allowed_sites `character`. Vector of allowed site identifiers.
-#'   Defaults to `c("pci", "etalab")`.
-#' @param allowed_formats `character`. Vector of allowed formats.
-#' @param allowed_scales `character`. Vector of allowed scales.
-#' @param ... Additional arguments passed to \code{\link{cdg_detect_millesimes}}.
-#'
-#' @return A `character` string representing the full download URL.
-#'
-#' @details
-#' - The format `"shp"` is not available for the `"communes"` scale.
-#' - The `millesime` parameter can be set explicitly, or defaults to the
-#'   latest available.
-#'
-#' @seealso [cdg_detect_millesimes(), cdg_aggr_url(), cdg_get_path()]
-#'
-#' @examples
-#' \dontrun{
-#' cdg_construct_url(
-#'   site = "pci",
-#'   format = "gpkg",
-#'   scale = "departements",
-#'   allowed_formats = c("gpkg", "shp"),
-#'   allowed_scales = c("communes", "departements")
-#' )
-#' }
-#'
-#' @export
-#'
-cdg_construct_url <- function(site,
-                              format,
-                              scale,
-                              millesime = NULL,
-                              allowed_sites = c("pci", "etalab"),
-                              allowed_formats,
-                              allowed_scales) {
-
-  # Validate inputs
-  site <- match.arg(site, allowed_sites)
-  format <- match.arg(format, allowed_formats)
-  scale <- match.arg(scale, allowed_scales)
-
-  # Specific rule: 'shp' not available for 'communes'
-  if (format == "shp" && scale == "communes") {
-    stop("The format 'shp' is not available for the 'communes' scale.")
-  }
-
-  # Default millesime = latest available
-  if (is.null(millesime)) {
-    millesimes <- cdg_detect_millesimes(site, allowed_sites)
-    millesime <- tail(millesimes, 1)
-  }
-
-  urls <- c(millesime, format, scale)
-  cdg_aggr_url(urls, base_url = cdg_get_path(site))
-}
-
-#' Construct a Commune Path String
-#'
-#' Constructs a path string for a given commune code by prepending
-#' the department code (first two characters) and joining them with a slash.
-#'
-#' @param commune `character`.
-#' A commune code, typically a string where the first two characters represent the department code.
-#'
-#' @return A `character` string combining department and commune codes separated by a slash.
-#'
-#' @examples
-#' cdg_construct_commune("75056")
-#' # Returns "75/75056"
-#'
-#' @export
-#'
-cdg_construct_commune <- function(commune){
-  dep <- substr(commune, 1, 2)
-  paste(c(dep, commune), collapse = "/")
-}
-
-
+### Download section ----
 #' Download and optionally extract an archive from a URL
 #'
-#' Downloads a file from the specified `url` to a destination file. Optionally,
-#' the downloaded archive can be extracted to a given directory.
+#' Downloads a file from the specified `url` to a destination file.
+#' Optionally, the downloaded archive can be extracted to a given directory.
+#' The function also checks that the URL is reachable before downloading
+#' and allows controlling message output via the `verbose` parameter.
 #'
 #' @param url `character`. URL of the archive to download.
-#' @param destfile `character`.
-#' Optional path to save the downloaded file.
-#' If `NULL`, a temporary file with an appropriate extension is created.
-#' @param extract `logical`. Defaults is `FALSE`.
-#' Whether to extract the archive after download.
-#' @param extract_dir `character`.
-#' Directory where the archive will be extracted.
-#' If `extract` is `TRUE`. If `NULL`, a temporary directory is created.
-#' @param overwrite `logical`. Defaults is `FALSE`.
-#' Whether to overwrite the destination file if it already exists.
+#' @param destfile `character`. Optional path to save the downloaded file.
+#'   If `NULL`, a temporary file with an appropriate extension is created.
+#' @param extract `logical`. Default is `FALSE`. Whether to extract the archive after download.
+#' @param extract_dir `character`. Directory where the archive will be extracted if `extract` is `TRUE`.
+#'   If `NULL`, a temporary directory is created.
+#' @param overwrite `logical`. Default is `FALSE`. Whether to overwrite the destination file if it already exists.
+#' @param verbose `logical`. Default is `TRUE`. Whether to display messages during download and extraction.
 #'
 #' @return If `extract` is `TRUE`, returns the path to the extraction directory.
 #'   Otherwise, returns a `list` with components:
@@ -294,47 +295,67 @@ cdg_construct_commune <- function(commune){
 #'
 #' @importFrom utils download.file
 #' @importFrom tools file_ext
+#' @importFrom httr HEAD status_code
 #'
 #' @seealso [archive::archive_extract()], [archive::archive()]
 #'
 #' @export
-#'
 cdg_download_archive <- function(url,
                                  destfile = NULL,
                                  extract = FALSE,
                                  extract_dir = NULL,
-                                 overwrite = FALSE) {
+                                 overwrite = FALSE,
+                                 verbose = TRUE) {
 
+  # Internal helper for verbose messages
+  .msg <- function(...) {
+    if (isTRUE(verbose)) message(...)
+  }
+
+  # 1. Check URL availability
+  if (requireNamespace("httr", quietly = TRUE)) {
+    resp <- try(httr::HEAD(url), silent = TRUE)
+    if (inherits(resp, "try-error") || httr::status_code(resp) != 200) {
+      stop("The provided URL is not reachable or returned an error.")
+    }
+  } else {
+    warning("Package 'httr' not installed — skipping URL check.")
+  }
+
+  # 2. Detect file extension
   ext <- tools::file_ext(url)
   if (ext == "") {
     warning("Unable to detect file extension; defaulting to '.zip'")
     ext <- "zip"
   }
 
+  # 3. Set default destination file
   if (is.null(destfile)) {
     destfile <- tempfile(fileext = paste0(".", ext))
   }
 
+  # 4. Conditional download
   if (file.exists(destfile) && !overwrite) {
-    message("File already exists: ", destfile)
+    .msg("File already exists: ", destfile)
   } else {
-    message("Downloading from: ", url)
-    utils::download.file(url, destfile, mode = "wb", quiet = FALSE)
-    message("File downloaded: ", destfile)
+    .msg("Downloading from: ", url)
+    utils::download.file(url, destfile, mode = "wb", quiet = !verbose)
+    .msg("File downloaded to: ", destfile)
   }
 
+  # 5. Extraction
   if (extract) {
     if (is.null(extract_dir)) {
       extract_dir <- tempfile("extract_")
       dir.create(extract_dir)
     }
 
-    # Si fichier .gz (gzip simple), on décompresse "manuellement"
-    if (ext == "gz") {
-      # nom du fichier décompressé (sans .gz)
-      out_file <- file.path(extract_dir, sub("\\.gz$", "", basename(destfile)))
+    # Filename from URL (without query parameters)
+    filename_from_url <- basename(sub("\\?.*$", "", url))
 
-      message("Decompressing gzip file to: ", out_file)
+    if (ext == "gz") {
+      out_file <- file.path(extract_dir, sub("\\.gz$", "", filename_from_url))
+      .msg("Decompressing gzip file to: ", out_file)
 
       con_in <- gzfile(destfile, "rb")
       con_out <- file(out_file, "wb")
@@ -344,16 +365,13 @@ cdg_download_archive <- function(url,
       close(con_in)
       close(con_out)
 
-      message("File decompressed to: ", out_file)
+      .msg("File decompressed to: ", out_file)
       return(extract_dir)
-
     } else {
-      # Sinon extraction standard avec archive
       archive::archive_extract(destfile, dir = extract_dir)
-      message("Files extracted to: ", extract_dir)
+      .msg("Files extracted to: ", extract_dir)
       return(extract_dir)
     }
-
   } else {
     info <- archive::archive(destfile)
     return(list(file = destfile, contents = info))
@@ -364,83 +382,89 @@ cdg_download_archive <- function(url,
 #' Download multiple archives and optionally extract them
 #'
 #' Downloads multiple archives from the given `urls`. Each archive can be
-#' extracted to either a unique subdirectory or a common extraction directory.
+#' extracted either into a unique subdirectory (one per archive) or into a common extraction directory.
 #'
-#' @param urls `character`.
-#' Vector of URLs to download.
-#' @param destfiles `character`.
-#' Optional vector of file paths to save the downloaded files.
-#' If `NULL`, temporary files are created. Must have the same length as `urls`.
-#' @param extract `logical`. Defaults is `FALSE`.
-#' Whether to extract the archives after downloading.
-#' @param extract_dir `character`.
-#' Directory where archives will be extracted.
-#' If `NULL`, the system temporary directory is used.
-#' @param overwrite `logical`. Defaults to `FALSE`.
-#' Whether to overwrite existing downloaded files.
-#' @param use_subdirs `logical`. Defaults to `FALSE`.
-#' If `TRUE`, each archive is extracted into its own subdirectory within `extract_dir`.
-#' Otherwise, all archives are extracted into `extract_dir` directly.
+#' @param urls `character`. Vector of URLs to download.
+#' @param destfiles `character`. Optional vector of file paths to save the downloaded files.
+#'   If `NULL`, temporary files are created. Must have the same length as `urls`.
+#' @param extract `logical`. Default is `FALSE`. Whether to extract the archives after downloading.
+#' @param extract_dir `character`. Directory where archives will be extracted.
+#'   If `NULL`, a temporary directory is created for this call.
+#' @param overwrite `logical`. Default is `FALSE`. Whether to overwrite existing downloaded files.
+#' @param use_subdirs `logical`. Default is `FALSE`. If `TRUE`, each archive is extracted into
+#'   its own subdirectory within `extract_dir`. Otherwise, all archives are extracted directly into `extract_dir`.
+#' @param verbose `logical`. Default is `FALSE`. Whether to display messages during download and extraction.
 #'
-#' @return A list of extraction directories used for each archive. Length equals
-#'   the number of `urls`.
+#' @return A list of extraction directories used for each archive. Length equals the number of `urls`.
 #'
-#' @importFrom utils menu
 #' @seealso [cdg_download_archive()]
-#'
+#' @importFrom utils menu
 #' @export
-#'
 cdg_download_archives <- function(urls,
                                   destfiles = NULL,
                                   extract = FALSE,
                                   extract_dir = NULL,
                                   overwrite = FALSE,
-                                  use_subdirs = FALSE) {
-  n <- length(urls)
+                                  use_subdirs = FALSE,
+                                  verbose = FALSE) {
+  n <- length(urls)  # Number of URLs to download
 
-  # Crée un dossier temporaire unique pour CET appel
+  # Create a unique temporary folder for this function call if no extraction directory is provided
   if (is.null(extract_dir)) {
     extract_dir <- tempfile(pattern = "cdg_extract_")
     dir.create(extract_dir, recursive = TRUE)
   }
 
-  # Définit les noms de fichiers de destination
+  # Set destination file paths
+  # If not provided, create default names based on the URL extensions
   if (is.null(destfiles)) {
-    exts <- tools::file_ext(urls)
+    exts <- tools::file_ext(urls)  # Get the file extensions from the URLs
     destfiles <- file.path(extract_dir, paste0("file_", seq_len(n), ".", exts))
   }
+
+  # Ensure that the number of destination files matches the number of URLs
   if (length(destfiles) != n) {
     stop("`destfiles` must have the same length as `urls`")
   }
 
-  results <- vector("list", n)
+  results <- vector("list", n)  # Initialize a list to store results of each download/extraction
 
+  # Loop through each URL and download (and optionally extract) the archive
   for (i in seq_along(urls)) {
     message(sprintf("\n--- [%d/%d] Downloading: %s", i, n, urls[i]))
 
+    # Determine extraction folder for this archive
     if (use_subdirs) {
+      # If using subdirectories, create one per archive
       sub_extract_dir <- file.path(extract_dir, paste0("extract_", i))
       if (!dir.exists(sub_extract_dir)) dir.create(sub_extract_dir, recursive = TRUE)
     } else {
+      # Otherwise, use the common extraction directory
       sub_extract_dir <- extract_dir
     }
 
+    # Download (and optionally extract) the archive
     results[[i]] <- cdg_download_archive(
       url = urls[i],
       destfile = destfiles[i],
       extract = extract,
       extract_dir = sub_extract_dir,
-      overwrite = overwrite
+      overwrite = overwrite,
+      verbose = verbose
     )
   }
 
+  # Return a list of extraction directories used for each archive
   if (use_subdirs) {
+    # Return each subdirectory if separate folders were used
     return(lapply(seq_len(n), function(i) file.path(extract_dir, paste0("extract_", i))))
   } else {
+    # Otherwise, return the common extraction directory replicated for each URL
     return(rep(list(extract_dir), n))
   }
 }
 
+### INSEE code section ----
 #' Detect and validate INSEE code (city or department)
 #'
 #' Checks if the provided INSEE code is valid among communes or départements,

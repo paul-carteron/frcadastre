@@ -4,49 +4,26 @@
 \alias{idu_split}
 \title{Split IDU into Its Components}
 \usage{
-idu_split(
-  idu,
-  col_dep = "dep",
-  col_com = "commune",
-  col_prefix = "prefixe",
-  col_section = "section",
-  col_number = "numero",
-  add_reg = TRUE,
-  col_name = NULL
-)
+idu_split(idu)
 }
 \arguments{
 \item{idu}{\code{character}
 A vector of IDU codes (14 characters each). Non-character inputs will be coerced.}
-
-\item{col_dep, col_com, col_prefix, col_section, col_number}{\code{character}
-Names to use for the department, commune, prefix, section, and number columns
-in the returned data frame.}
-
-\item{add_reg}{\code{logical}
-If \code{TRUE} (default), add a column with the region code corresponding to the department.}
-
-\item{col_name}{\code{character} or \code{NULL}
-If provided, this column name from the \code{rcadastre} reference tables will be
-used to add labels for region, department, and commune.
-Common choices: \code{"NOM_DEP"}, \code{"NOM_REG"}, \code{"NOM_COM"}.}
 }
 \value{
-A \code{data.frame} with one row per IDU and columns for the components:
+A \code{data.frame} with one row per IDU and columns:
 \itemize{
-\item Department
-\item Commune
-\item Prefix
-\item Section
-\item Number
-Optionally, region codes and labels are added.
+\item \code{code_dep}  : Department code
+\item \code{code_com}  : Commune code
+\item \code{prefix}    : Prefix code
+\item \code{section}   : Section code
+\item \code{numero}    : Parcel number
+\item \code{insee}     : INSEE code of commune
 }
 }
 \description{
 Splits a French cadastral parcel IDU (Identifiant de parcelle) into its
-administrative and cadastral components: department, commune, prefix,
-section, and parcel number.
-Optionally adds region codes and names for all administrative levels.
+components: department, commune, prefix, section, and parcel number.
 }
 \details{
 The IDU structure is:
@@ -57,15 +34,8 @@ The IDU structure is:
 [9-10]  : Section code
 [11-14] : Parcel number
 }\if{html}{\out{</div>}}
-
-Reference datasets are taken from \code{rcadastre::region_2025},
-\code{rcadastre::departement_2025}, and \code{rcadastre::commune_2025}.
 }
 \examples{
-# Basic split
 idu_split("0100200A0012")
-
-# Add region and labels
-idu_split("0100200A0012", add_reg = TRUE, col_name = "NOM_DEP")
 
 }

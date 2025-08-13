@@ -1,3 +1,4 @@
+### Build IDU section ----
 #' Build a Unique ID (IDU) for a Parcel
 #'
 #' Constructs a standardized 14-character ID for a parcel based on department, commune, prefix, section, and number.
@@ -40,7 +41,7 @@ idu_build <- function(dep = NULL, com, prefix = "0", section, numero) {
   }
 }
 
-#' Fill a Data Frame with IDU Codes
+#' Build IDU Codes into a data frame
 #'
 #' Adds an `idu` column to a data frame using parcel components.
 #'
@@ -62,16 +63,12 @@ idu_build <- function(dep = NULL, com, prefix = "0", section, numero) {
 #'
 #' @examples
 #' df <- data.frame(dep="01", com="002", prefix="0", section="A", number="12")
-#' idu_fill_df(df, "com", "prefix", "section", "number", "dep")
+#' idu_build_in_df(df, "com", "prefix", "section", "number", "dep")
 #'
 #' @export
 #'
-idu_fill_df <- function(df,
-                        col_com,
-                        col_prefix,
-                        col_section,
-                        col_number,
-                        col_dep = NULL) {
+idu_build_in_df <- function(df,
+                            col_com, col_prefix, col_section, col_number, col_dep = NULL) {
   if (!is.null(col_dep) && !(col_dep %in% names(df))) {
     stop(paste0("Column '", col_dep, "' does not exist in the data frame."))
   }
@@ -105,35 +102,158 @@ idu_fill_df <- function(df,
   return(df)
 }
 
+### Detect IDU section ----
+#' Check if a vector contains valid IDU codes
+#'
+#' @param x A character vector to validate.
+#' @return A logical vector, TRUE for valid IDU entries.
+#'
+#' @details
+#' An IDU is defined as:
+#' \itemize{
+#'   \item A `character` vector of length 14 for all entries
+#'   \item First 5 characters are digits (0–9)
+#'   \item Next 5 characters are uppercase letters (A–Z) or digits (0–9)
+#'   \item Last 4 characters are digits (0–9)
+#'   \item No missing values (NA) or empty strings
+#'   \item No lowercase letters or special characters
+#' }
+#'
+#' @export
+#'
+idu_check <- function(x) {
+  # Coerce to character
+  x <- as.character(x)
+
+  # Define IDU pattern: 5 digits + 5 uppercase alphanumeric + 4 digits
+  pattern <- "^[0-9]{5}[0-9A-Z]{5}[0-9]{4}$"
+
+  # Check: not NA, not empty, length 14, match pattern
+  valid <- !is.na(x) & x != "" & nchar(x, type = "chars") == 14 & grepl(pattern, x, perl = TRUE)
+
+  return(valid)
+}
+
+#' Detect the IDU column in a data frame
+#'
+#' This function scans each column of a data frame to identify the one
+#' containing IDU values.
+#'
+#' @param df A `data.frame` or similar object to search.
+#' @param output `character`. Defaults is `"both"`.
+#' Astring indicating the type of output:
+#'   `"name"` for the column name,
+#'   `"position"` for the column index,
+#'   or `"both"` for a list with both.
+#'
+#' @return
+#' A named list with:
+#' \describe{
+#'   \item{name}{The column name containing IDU values}
+#'   \item{position}{The column index in `df`}
+#' }
+#' Returns `NULL` if no column matches the IDU pattern.
+#'
+#' @examples
+#' df <- data.frame(
+#'   parcel_id = c("12345ABCDE6789", "54321ZZZZZ0000"),
+#'   name = c("Oak", "Pine"),
+#'   stringsAsFactors = FALSE
+#' )
+#' idu_detect_in_df(df)
+#' idu_detect_in_df(df, output = "name")
+#' idu_detect_in_df(df, output = "position")
+#'
+#' @export
+#'
+idu_detect_in_df <- function(df, output = c("both", "name", "position")) {
+  # Match argument
+  output <- match.arg(output)
+
+  # Validate input
+  if (!is.data.frame(df)) {
+    stop("'df' must be a data.frame or tibble", call. = FALSE)
+  }
+
+  # Check
+  for (i in seq_along(df)) {
+    col <- df[[i]]
+    if (!is.character(col)) next
+
+    # Use idu_check to validate the whole column
+    if (all(idu_check(col))) {
+      if (output == "name") return(names(df)[i])
+      if (output == "position") return(i)
+      return(list(name = names(df)[i], position = i))
+    } else {
+      message("No column matches the IDU pattern.")
+    }
+  }
+
+  # No match found
+  return(NULL)
+}
+
+#' Rename the IDU column in a data frame
+#'
+#' This function detects the column containing IDU values in a data frame
+#' and renames it to the name provided by the user.
+#'
+#' @param df A `data.frame` or similar object to search.
+#' @param new_name A `character` string specifying the new column name for the IDU column.
+#'
+#' @return A `data.frame` identical to `df` except the IDU column is renamed.
+#' If no IDU column is detected, the original data frame is returned unchanged.
+#'
+#' @examples
+#' df <- data.frame(
+#'   parcel_id = c("12345ABCDE6789", "54321ZZZZZ0000"),
+#'   name = c("Oak", "Pine"),
+#'   stringsAsFactors = FALSE
+#' )
+#' df <- idu_rename_in_df(df, "IDU")
+#' names(df)
+#'
+#' @export
+#'
+idu_rename_in_df <- function(df, new_name) {
+  # Input checks
+  if (!inherits(df, c("data.frame", "sf"))) {
+    stop("'df' must be a data.frame or sf object.", call. = FALSE)
+  }
+  if (!is.character(new_name) || length(new_name) != 1){
+    stop("'new_name' must be a single character string", call. = FALSE)
+  }
+
+  # Detect the IDU column
+  idu_info <- idu_detect_in_df(df, output = "both")
+
+  if (is.null(idu_info)) {
+    warning("No IDU column detected. Returning original data frame.", call. = FALSE)
+    return(df)
+  }
+
+  # Rename the column
+  names(df)[idu_info$position] <- new_name
+  return(df)
+}
+
+### Split IDU section ----
 #' Split IDU into Its Components
 #'
 #' Splits a French cadastral parcel IDU (Identifiant de parcelle) into its
-#' administrative and cadastral components: department, commune, prefix,
-#' section, and parcel number.
-#' Optionally adds region codes and names for all administrative levels.
+#' components: department, commune, prefix, section, and parcel number.
 #'
 #' @param idu `character`
-#' A vector of IDU codes (14 characters each). Non-character inputs will be coerced.
+#'   A vector of IDU codes (14 characters each). Non-character inputs will be coerced.
 #'
-#' @param col_dep,col_com,col_prefix,col_section,col_number `character`
-#' Names to use for the department, commune, prefix, section, and number columns
-#' in the returned data frame.
-#'
-#' @param add_reg `logical`
-#' If `TRUE` (default), add a column with the region code corresponding to the department.
-#'
-#' @param col_name `character` or `NULL`
-#' If provided, this column name from the `rcadastre` reference tables will be
-#' used to add labels for region, department, and commune.
-#' Common choices: `"NOM_DEP"`, `"NOM_REG"`, `"NOM_COM"`.
-#'
-#' @return A `data.frame` with one row per IDU and columns for the components:
-#' - Department
-#' - Commune
-#' - Prefix
-#' - Section
-#' - Number
-#' Optionally, region codes and labels are added.
+#' @return A `data.frame` with one row per IDU and columns:
+#' - `code_dep`  : Department code
+#' - `code_com`  : Commune code
+#' - `prefix`    : Prefix code
+#' - `section`   : Section code
+#' - `numero`    : Parcel number
+#' - `insee`     : INSEE code of commune
 #'
 #' @details
 #' The IDU structure is:
@@ -144,159 +264,405 @@ idu_fill_df <- function(df,
 #' [9-10]  : Section code
 #' [11-14] : Parcel number
 #' ```
-#' Reference datasets are taken from `rcadastre::region_2025`,
-#' `rcadastre::departement_2025`, and `rcadastre::commune_2025`.
 #'
 #' @examples
-#' # Basic split
 #' idu_split("0100200A0012")
 #'
-#' # Add region and labels
-#' idu_split("0100200A0012", add_reg = TRUE, col_name = "NOM_DEP")
+#' @export
+#'
+idu_split <- function(idu) {
+  # Coerce to character and validate
+  idu <- as.character(idu)
+  if (length(idu) == 0L) stop("`idu` must not be empty.", call. = FALSE)
+  if (anyNA(idu)) stop("`idu` contains NA values.", call. = FALSE)
+  if (!all(nchar(idu) == 14)) stop("All IDU codes must have exactly 14 characters.", call. = FALSE)
+
+  # Split into components
+  data.frame(
+    idu     = idu,
+    code_dep= substr(idu, 1, 2),
+    code_com= substr(idu, 3, 5),
+    prefix  = substr(idu, 6, 8),
+    section = substr(idu, 9, 10),
+    numero  = substr(idu, 11, 14),
+    insee   = substr(idu, 1, 5),
+    stringsAsFactors = FALSE
+  )
+}
+### Add IDU section ----
+#' Merge two data frames and rename a column
+#'
+#' @description
+#' Internal helper function to merge two data frames on specified key columns
+#' and rename a target column in the joined result.
+#'
+#' @param x A \code{data.frame} containing the primary data.
+#' @param df A \code{data.frame} containing the lookup or join data.
+#' @param ref_x Name of the column in \code{x} to use as the join key.
+#' @param ref_y Name of the column in \code{df} to use as the join key.
+#' @param ini_col Name of the column in \code{df} to extract and rename.
+#' @param fin_col New name to assign to \code{ini_col} in the output.
+#'
+#' @details
+#' The function:
+#' \enumerate{
+#'   \item Checks that \code{ini_col} exists in \code{df}.
+#'   \item Performs a left join of \code{x} with \code{df} using
+#'         \code{merge()}, matching \code{ref_x} with \code{ref_y}.
+#'   \item Selects only the join key (\code{ref_y}) and \code{ini_col}
+#'         from \code{df}.
+#'   \item Renames \code{ini_col} in the result to \code{fin_col}.
+#' }
+#'
+#' @return
+#' A \code{data.frame} containing all rows from \code{x} and the matched
+#' values from \code{df}, with \code{ini_col} renamed to \code{fin_col}.
+#'
+#' @keywords internal
+#'
+#' @examples
+#' \dontrun{
+#' df1 <- data.frame(id = 1:3, value = letters[1:3])
+#' df2 <- data.frame(key = 1:3, original = c("A", "B", "C"))
+#'
+#' .merge_with_name(df1, df2, "id", "key", "original", "renamed")
+#' }
+.merge_with_name <- function(x, df, ref_x, ref_y, ini_col, fin_col) {
+  if (!ini_col %in% names(df)) {
+    stop(sprintf("Column '%s' not found in join table.", ini_col), call. = FALSE)
+  }
+  res <- merge(
+    x,
+    df[, c(ref_y, ini_col), drop = FALSE],
+    by.x = ref_x,
+    by.y = ref_y,
+    all.x = TRUE,
+    all.y = FALSE
+  )
+  names(res)[names(res) == ini_col] <- fin_col
+  res
+}
+
+#' Get region/department/commune names from IDU codes
+#'
+#' This function takes one or more IDU codes, validates them, splits them into
+#' their components, and merges them with reference datasets to retrieve the
+#' corresponding region, department, and/or commune names.
+#'
+#' @param idu A `character` vector of valid IDU codes.
+#' @param loc A `character` string specifying which location levels to include.
+#' One of `"both"`, `"reg"`, `"dep"`, or `"com"`.
+#' @param cog_field `character`. Défaut is `"NCC"`.
+#' The name of the field in the reference datasets to use.
+#'
+#' @return A `data.frame` with the IDU split into its components and
+#' the requested location names.
+#'
+#' @examples
+#' # idu_get_name(c("12345ABCDE6789", "54321ZZZZZ1234"), loc = "both")
 #'
 #' @export
-idu_split <- function(idu,
-                      col_dep = "dep",
-                      col_com = "commune",
-                      col_prefix = "prefixe",
-                      col_section = "section",
-                      col_number = "numero",
-                      add_reg = TRUE,
-                      col_name = NULL) {
+#'
+idu_get_name <- function(idu,
+                         loc = c("both", "reg", "dep", "com"),
+                         cog_field = "NCC") {
+  # Match argument
+  loc <- match.arg(loc)
 
-  # Coerce to character and validate length
-  idu <- as.character(idu)
-  if (length(idu) == 0L) {
-    stop("`idu` must not be empty.", call. = FALSE)
+  # Validate IDUs
+  valid <- idu_check(idu)
+  if (!all(valid)) {
+    stop(
+      "Invalid IDU(s) detected: ",
+      paste(idu[!valid], collapse = ", "),
+      call. = FALSE
+    )
   }
-  if (anyNA(idu)) {
-    stop("`idu` contains NA values. Remove or replace them before calling.", call. = FALSE)
-  }
-  if (!all(nchar(idu) == 14)) {
-    stop("All IDU codes must have exactly 14 characters.", call. = FALSE)
-  }
+
+  # Split IDU into parts (must return: code_dep, code_reg, insee, etc.)
+  idu_parts <- idu_split(idu)
 
   # Reference datasets
   regs <- rcadastre::region_2025
   deps <- rcadastre::departement_2025
   coms <- rcadastre::commune_2025
 
-  # Base split
-  res <- data.frame(
-    dep     = substr(idu, 1, 2),
-    com     = substr(idu, 3, 5),
-    prefix  = substr(idu, 6, 8),
-    section = substr(idu, 9, 10),
-    number  = substr(idu, 11, 14),
-    stringsAsFactors = FALSE
-  )
-  names(res) <- c(col_dep, col_com, col_prefix, col_section, col_number)
+  res <- idu_parts
 
-  # Internal helper
-  .merge_with_name <- function(res, df, refx, refy, ini_col, fincol) {
-    if (!all(c(refy, ini_col) %in% names(df))) {
-      stop(sprintf("Reference columns '%s' and/or '%s' not found in reference data frame.",
-                   refy, ini_col), call. = FALSE)
-    }
-    if (!refx %in% names(res)) {
-      stop(sprintf("Column '%s' not found in data to merge.", refx), call. = FALSE)
-    }
-    res <- merge(
-      res,
-      df[, c(refy, ini_col), drop = FALSE],
-      by.x = refx,
-      by.y = refy,
-      all.x = TRUE,
-      all.y = FALSE
-    )
-    names(res)[names(res) == ini_col] <- fincol
-    res
+  # Add names according to 'loc'
+  if (loc %in% c("both", "reg")) {
+    res <- .merge_with_name(res, deps, "code_dep", "DEP", "REG", "code_reg")
+    res <- .merge_with_name(res, regs, "code_reg", "REG", cog_field, "reg_name")
   }
-
-  # Optionally add region code
-  if (isTRUE(add_reg)) {
-    res <- .merge_with_name(res, deps, col_dep, "DEP", "REG", "reg")
+  if (loc %in% c("both", "dep")) {
+    res <- .merge_with_name(res, deps, "code_dep", "DEP", cog_field, "dep_name")
   }
-
-  # Optionally add names
-  if (!is.null(col_name)) {
-    if (!is.character(col_name) || length(col_name) != 1L) {
-      stop("`col_name` must be a single string naming a column in the reference tables.", call. = FALSE)
-    }
-    if (!col_name %in% names(deps) || !col_name %in% names(coms) || !col_name %in% names(regs)) {
-      warning("`col_name` not found in all reference datasets; only available names will be added.", call. = FALSE)
-    }
-
-    res$insee <- paste0(res[[col_dep]], res[[col_com]])
-
-    if (isTRUE(add_reg) && col_name %in% names(regs)) {
-      res <- .merge_with_name(res, regs, "reg", "REG", col_name, "reg_name")
-    }
-    if (col_name %in% names(deps)) {
-      res <- .merge_with_name(res, deps, col_dep, "DEP", col_name, "dep_name")
-    }
-    if (col_name %in% names(coms)) {
-      res <- .merge_with_name(res, coms, "insee", "COM", col_name, "commune_name")
-    }
+  if (loc %in% c("both", "com")) {
+    res <- .merge_with_name(res, coms, "insee", "COM", cog_field, "com_name")
   }
 
   res
 }
 
-#' Associate Lieudits to Parcelles
+#' Append location names to a data.frame containing IDU codes
 #'
-#' Computes centroid for each parcel, intersects with lieudits, and merges the lieudit name into the parcels table.
+#' This function detects the column containing IDU codes in a data.frame,
+#' then uses \code{\link{idu_get_name}} to append the corresponding
+#' region, department, and/or commune names.
 #'
-#' @param parcelles `sf` object.
-#' Parcel geometries with `id` column.
-#' @param lieudits `sf` object.
-#' Lieudit geometries with `id` and `nom` columns.
+#' @param df A `data.frame` containing an IDU column.
+#' @param loc A `character` string specifying which location levels to include.
+#' One of `"both"`, `"reg"`, `"dep"`, or `"com"`.
+#' @param cog_field `character`. Défaut is `"NCC"`.
+#' The name of the field in the reference datasets to use.
 #'
-#' @return sf object. Parcelles with an additional `lieudit` column.
-#'
-#' @importFrom sf st_centroid st_join st_intersects st_drop_geometry
-#' @seealso [idu_get_parcelle()]
-#'
+#' @return A `data.frame` with new location name columns appended.
 #' @export
 #'
-lieudits_for_parcelles <- function(parcelles, lieudits, col_idu = "id"){
-  parcelles_centroids <- sf::st_centroid(parcelles)
-  intersections <- sf::st_join(parcelles_centroids, lieudits, left = TRUE, join = sf::st_intersects) |>
-    transform(lieudit = nom) |>
-    subset(select = c(col_idu, "lieudit")) |>
-    sf::st_drop_geometry()
-  result <- merge(parcelles, intersections, by = col_idu, all = TRUE)
-  return(result)
+#' @examples
+#' # my_df <- data.frame(idu = c("12345ABCDE6789", "54321ZZZZZ1234"))
+#' # idu_get_name_in_df(my_df, loc = "both")
+#'
+idu_get_name_in_df <- function(df,
+                               loc = c("both", "reg", "dep", "com"),
+                               cog_field = "NCC") {
+  # Validate input type
+  if (!inherits(df, c("data.frame", "sf"))) {
+    stop("'df' must be a data.frame or sf object.", call. = FALSE)
+  }
+
+  # Detect IDU column
+  idu_info <- idu_detect_in_df(df, "both")
+  if (is.null(idu_info)) {
+    stop("No valid IDU column found in data.frame.", call. = FALSE)
+  }
+  idu_colname <- idu_info$name
+
+  # Get names from IDUs
+  name_data <- idu_get_name(
+    idu = df[[idu_colname]],
+    loc = loc,
+    cog_field = cog_field
+  )
+
+  # Merge with original data.frame (preserve row order)
+  cbind(df, name_data[ , setdiff(names(name_data), names(df)), drop = FALSE])
 }
 
-#' Retrieve Parcelles from IDU Codes
+#' Retrieve "lieu-dit" names for given IDUs
 #'
-#' Downloads and filters parcel data corresponding to a vector of IDU codes.
+#' This function takes one or more valid IDU codes, retrieves parcel and lieu-dit
+#' data from Etalab, performs a spatial join to determine the lieu-dit for each IDU,
+#' and returns a data.frame mapping IDUs to their lieu-dit names.
 #'
-#' @param idu `character`. Vector of IDU codes.
-#' @param filter `logical`. Defaut is `TRUE`.
-#' If `TRUE`, only returns the parcels matching the IDU codes.
+#' @param idu A `character` vector of valid IDU codes.
 #'
-#' @return A `sf` object. Filtered parcel geometries.
+#' @return A `data.frame` containing the split IDU parts and an additional
+#' `lieudit` column with the matched lieu-dit names.
 #'
-#' @importFrom sf st_drop_geometry st_centroid st_join st_intersects
-#'
-#' @seealso [idu_split(), get_quick_etalab(), lieudits_for_parcelles()]
+#' @examples
+#' \dontrun{
+#' idu_get_lieudit(c("12345ABCDE6789", "54321ZZZZZ1234"))
+#' }
 #'
 #' @export
 #'
-idu_get_parcelle <- function(idu, filter = TRUE) {
-  idu_parts <- idu_split(idu)
-  insee_code <- unique(paste0(idu_parts$dep, idu_parts$com))
-  parcelles <- get_quick_etalab(insee_code)
-  lieudits <- get_quick_etalab(insee_code, "lieux_dits")
-  parcelles <- lieudits_for_parcelles(parcelles, lieudits)
-  if (filter) {
-    col_candidates <- c("idu", "IDU", "id")
-    col_idu <- intersect(col_candidates, names(parcelles))
-    if (length(col_idu) == 0) stop("No ID column found in parcelles. Tried 'idu', 'IDU', 'id'.")
-    col_idu <- col_idu[1]
-    parcelles <- parcelles[parcelles[[col_idu]] %in% idu, ] |> unique()
+idu_get_lieudit <- function(idu){
+  # Validate IDUs
+  valid <- idu_check(idu)
+  if (!all(valid)) {
+    stop(
+      "Invalid IDU(s) detected: ",
+      paste(idu[!valid], collapse = ", "),
+      call. = FALSE
+    )
   }
-  return(parcelles)
+
+  # Split IDU into parts (must include: code_dep, code_reg, insee)
+  idu_parts <- idu_split(idu)
+
+  # Get unique INSEE codes
+  insee_codes <- unique(idu_parts$insee)
+
+  # Download data from Etalab
+  parcelles <- get_quick_etalab(insee_codes) |> idu_rename_in_df("idu")
+  lieudits <- get_quick_etalab(insee_codes, "lieux_dits")
+
+  # Ensure returned objects are sf
+  if (!inherits(parcelles, "sf") || !inherits(lieudits, "sf")) {
+    stop("Etalab data must be 'sf' objects.", call. = FALSE)
+  }
+
+  # Compute centroids of parcels for spatial join
+  parcelles_centroids <- sf::st_centroid(parcelles)
+
+  # Join parcels with lieu-dit polygons
+  intersections <- sf::st_join(parcelles_centroids,
+                               lieudits,
+                               left = TRUE,
+                               join = sf::st_intersects
+                               ) |> sf::st_drop_geometry()
+
+  # Merge
+  res <- .merge_with_name(idu_parts, intersections,
+                          "idu", "idu",
+                          "nom", "lieudit")
+
+  return(res)
+}
+
+#' Append lieu-dit names to a data.frame containing IDUs
+#'
+#' This function searches for a column containing valid IDUs in the input
+#' data.frame (or sf object), retrieves their lieu-dit names via
+#' \code{\link{idu_get_lieudit}}, and returns the data with a new
+#' `lieudit` column.
+#'
+#' @param df A `data.frame` or sf object containing at least one column with IDUs.
+#'
+#' @return The same object as `df`, with an added `lieudit` column.
+#'
+#' @examples
+#' \dontrun{
+#' my_data <- data.frame(idu = c("12345ABCDE6789", "54321ZZZZZ1234"))
+#' idu_get_lieudit_in_df(my_data)
+#' }
+#'
+#' @export
+#'
+idu_get_lieudit_in_df <- function(df) {
+  # Validate input type
+  if (!inherits(df, c("data.frame", "sf"))) {
+    stop("'df' must be a data.frame or sf object.", call. = FALSE)
+  }
+
+  # Detect IDU column
+  idu_info <- idu_detect_in_df(df, "both")
+  if (is.null(idu_info)) {
+    stop("No valid IDU column found in data.frame.", call. = FALSE)
+  }
+  idu_colname <- idu_info$name
+
+  # Extract IDU vector
+  idu_vec <- df[[idu_col]]
+
+  # Retrieve lieudit names
+  lieudit_df <- idu_get_lieudit(idu_vec)[, c("idu", "lieudit"), drop = FALSE]
+
+  # Merge results into original df
+  df <- merge(
+    df,
+    lieudit_df,
+    by.x = idu_col,
+    by.y = "idu",
+    all.x = TRUE
+  )
+
+  return(df)
+}
+
+#' Retrieve contenance values for given IDUs
+#'
+#' This function takes one or more valid IDU codes, retrieves parcel
+#' data from Etalab, and returns a data.frame linking each IDU to its `contenance`
+#' (surface area in square meters).
+#'
+#' @param idu A `character` vector of valid IDU codes.
+#'
+#' @return A `data.frame` containing the split IDU parts and an additional
+#' `contenance` column with the matched surfaces.
+#'
+#' @examples
+#' \dontrun{
+#' # Example IDUs
+#' my_idus <- c("12345ABCDE6789", "54321ZZZZZ1234")
+#'
+#' # Get parcel contenance
+#' contenance_df <- idu_get_contenance(my_idus)
+#' print(contenance_df)
+#' }
+#'
+#' @export
+#'
+idu_get_contenance <- function(idu){
+  # Validate IDUs
+  valid <- idu_check(idu)
+  if (!all(valid)) {
+    stop(
+      "Invalid IDU(s) detected: ",
+      paste(idu[!valid], collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  # Split IDU into parts (must include: code_dep, code_reg, insee)
+  idu_parts <- idu_split(idu)
+
+  # Get unique INSEE codes
+  insee_codes <- unique(idu_parts$insee)
+
+  # Download data from Etalab
+  parcelles <- get_quick_etalab(insee_codes) |> idu_rename_in_df("idu")
+
+  # Ensure returned objects are sf
+  if (!inherits(parcelles, "sf")) {
+    stop("Etalab data must be 'sf' objects.", call. = FALSE)
+  }
+
+  # Merge
+  res <- .merge_with_name(idu_parts, parcelles,
+                          "idu", "idu",
+                          "contenance", "contenance")
+
+  return(res)
+}
+
+#' Append contenance values to a data.frame containing IDUs
+#'
+#' This function searches for a column containing valid IDUs in the input
+#' data.frame (or sf object), retrieves their contenance values via
+#' \code{\link{idu_get_contenance}}, and returns the data with a new
+#' `contenance` column.
+#'
+#' @param df A `data.frame` or sf object containing at least one column with IDUs.
+#'
+#' @return The same object as `df`, with an added `contenance` column.
+#'
+#' @examples
+#' \dontrun{
+#' my_data <- data.frame(idu = c("12345ABCDE6789", "54321ZZZZZ1234"))
+#' idu_get_contenance_in_df(my_data)
+#' }
+#'
+#' @export
+#'
+idu_get_contenance_in_df <- function(df) {
+  # Validate input type
+  if (!inherits(df, c("data.frame", "sf"))) {
+    stop("'df' must be a data.frame or sf object.", call. = FALSE)
+  }
+
+  # Detect IDU column
+  idu_info <- idu_detect_in_df(df, "both")
+  if (is.null(idu_info)) {
+    stop("No valid IDU column found in data.frame.", call. = FALSE)
+  }
+  idu_colname <- idu_info$name
+
+  # Extract IDU vector
+  idu_vec <- df[[idu_col]]
+
+  # Retrieve contenance values
+  contenance_df <- idu_get_contenance(idu_vec)[, c("idu", "contenance"), drop = FALSE]
+
+  # Merge results into original df
+  df <- merge(
+    df,
+    contenance_df,
+    by.x = idu_col,
+    by.y = "idu",
+    all.x = TRUE
+  )
+
+  return(df)
 }

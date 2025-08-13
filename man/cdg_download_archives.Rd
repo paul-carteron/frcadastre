@@ -14,23 +14,26 @@ cdg_download_archives(
 )
 }
 \arguments{
-\item{urls}{\code{character} Vector of URLs to download.}
+\item{urls}{\code{character}.
+Vector of URLs to download.}
 
-\item{destfiles}{\code{character} Optional vector of file paths to save the downloaded
-files. If \code{NULL}, temporary files are created. Must have the same length as \code{urls}.}
+\item{destfiles}{\code{character}.
+Optional vector of file paths to save the downloaded files.
+If \code{NULL}, temporary files are created. Must have the same length as \code{urls}.}
 
-\item{extract}{\code{logical} Whether to extract the archives after downloading.
-Defaults to \code{FALSE}.}
+\item{extract}{\code{logical}. Defaults is \code{FALSE}.
+Whether to extract the archives after downloading.}
 
-\item{extract_dir}{\code{character} Directory where archives will be extracted.
+\item{extract_dir}{\code{character}.
+Directory where archives will be extracted.
 If \code{NULL}, the system temporary directory is used.}
 
-\item{overwrite}{\code{logical} Whether to overwrite existing downloaded files.
-Defaults to \code{FALSE}.}
+\item{overwrite}{\code{logical}. Defaults to \code{FALSE}.
+Whether to overwrite existing downloaded files.}
 
-\item{use_subdirs}{\code{logical} If \code{TRUE}, each archive is extracted into its own
-subdirectory within \code{extract_dir}. Otherwise, all archives are extracted into
-\code{extract_dir} directly. Defaults to \code{FALSE}.}
+\item{use_subdirs}{\code{logical}. Defaults to \code{FALSE}.
+If \code{TRUE}, each archive is extracted into its own subdirectory within \code{extract_dir}.
+Otherwise, all archives are extracted into \code{extract_dir} directly.}
 }
 \value{
 A list of extraction directories used for each archive. Length equals

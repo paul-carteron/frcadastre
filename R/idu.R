@@ -155,7 +155,7 @@ idu_split <- function(idu,
 #' @importFrom sf st_centroid st_join st_intersects st_drop_geometry
 #' @seealso [idu_get_parcelle()]
 #'
-#' @export
+#' @NoRd
 #'
 lieudits_for_parcelles <- function(parcelles, lieudits){
   parcelles_centroids <- sf::st_centroid(parcelles)

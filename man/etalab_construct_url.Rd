@@ -7,13 +7,13 @@
 etalab_construct_url(scale = "communes", ...)
 }
 \arguments{
-\item{scale}{Character. Scale of data to retrieve. Must be one of \code{"departements"} or \code{"communes"}.
-Default is \code{"communes"}.}
+\item{scale}{\code{character}. Default is \code{"communes"}.
+Scale of data to retrieve. Must be one of \code{"departements"} or \code{"communes"}.}
 
-\item{...}{Additional arguments passed to \code{cdg_construct_url()}.}
+\item{...}{Additional arguments passed to \code{\link{cdg_construct_url}}.}
 }
 \value{
-Character string with the constructed URL.
+A \code{character} string with the constructed URL.
 }
 \description{
 Constructs a URL to access Etalab data for a specified scale.
@@ -24,4 +24,7 @@ etalab_construct_url(scale = "departements")
 etalab_construct_url(scale = "communes")
 }
 
+}
+\seealso{
+\code{\link[=cdg_construct_url]{cdg_construct_url()}}
 }

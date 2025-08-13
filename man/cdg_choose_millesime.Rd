@@ -7,9 +7,11 @@
 cdg_choose_millesime(site, millesime = NULL, ...)
 }
 \arguments{
-\item{site}{\code{character} string specifying the data site. Passed to \code{\link{cdg_detect_millesimes}}.}
+\item{site}{\code{character}.
+String specifying the data site. Passed to \code{\link{cdg_detect_millesimes}}.}
 
-\item{millesime}{\code{character} specifying the desired millesime:
+\item{millesime}{\code{character}.
+Specifying the desired millesime:
 \itemize{
 \item \code{NULL} → returns \code{"latest"}.
 \item \code{"?"} → opens an interactive menu to choose from available millesimes.

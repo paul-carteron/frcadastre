@@ -7,9 +7,9 @@
 cdg_aggr_url(urls, base_url)
 }
 \arguments{
-\item{urls}{\code{character} vector of relative URL components to append.}
+\item{urls}{\code{character}. Vector of relative URL components to append.}
 
-\item{base_url}{\code{character} string representing the base URL.}
+\item{base_url}{\code{character}. String representing the base URL.}
 }
 \value{
 A single \code{character} string containing the complete aggregated URL.

@@ -7,14 +7,16 @@
 etalab_get_data_url(insee_code, data, ...)
 }
 \arguments{
-\item{insee_code}{Character. INSEE code of the geographic unit (commune or department).}
+\item{insee_code}{\code{character}.
+INSEE code of the geographic unit (commune or department).}
 
-\item{data}{Character. Type of data to retrieve. Must be one of the allowed data types for the given scale.}
+\item{data}{\code{character}.
+Type of data to retrieve. Must be one of the allowed data types for the given scale.}
 
-\item{...}{Additional arguments passed to \code{etalab_construct_url()} and other internal functions.}
+\item{...}{Additional arguments passed to \code{\link{etalab_construct_url}}.}
 }
 \value{
-Character string with the constructed URL.
+A \code{character} string with the constructed URL.
 }
 \description{
 Constructs the download URL for Etalab data based on the INSEE code and requested data type.
@@ -30,4 +32,7 @@ etalab_get_data_url("75056", "batiments")
 etalab_get_data_url("69", "voie")
 }
 
+}
+\seealso{
+\code{\link[=etalab_construct_url]{etalab_construct_url()}}
 }

@@ -7,8 +7,8 @@
 cdg_construct_commune(commune)
 }
 \arguments{
-\item{commune}{\code{character} A commune code, typically a string where
-the first two characters represent the department code.}
+\item{commune}{\code{character}.
+A commune code, typically a string where the first two characters represent the department code.}
 }
 \value{
 A \code{character} string combining department and commune codes separated by a slash.

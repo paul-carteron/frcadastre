@@ -2,27 +2,33 @@
 % Please edit documentation in R/pci.R
 \name{pci_detect_feuilles}
 \alias{pci_detect_feuilles}
-\title{Détecter les feuilles PCI disponibles pour une commune}
+\title{Detect available PCI sheets for a municipality}
 \usage{
 pci_detect_feuilles(commune, format = "edigeo", skip = FALSE, ...)
 }
 \arguments{
 \item{commune}{\code{character}.
-Code INSEE de la commune (ex: "02120").}
+INSEE code of the municipality (e.g., "02120").}
 
-\item{...}{Arguments supplémentaires passés à \code{\link{pci_construct_url}}.}
+\item{format}{\code{character}.
+PCI format (default: \code{"edigeo"}).}
+
+\item{skip}{\code{logical}.
+If \code{TRUE}, removes the \verb{edigeo-} or \verb{dxf-} prefix and the \code{.tar.bz2} suffix from the filenames.}
+
+\item{...}{Additional arguments passed to \code{\link{pci_construct_url}}.}
 }
 \value{
 \code{character}.
-Un vecteur des noms des feuilles PCI disponibles.
+A vector of the PCI sheet names available.
 }
 \description{
-Cette fonction retourne la liste des feuilles disponibles pour une commune donnée dans le PCI.
+This function returns the list of available PCI sheets for a given municipality.
 }
 \details{
-La fonction construit l'URL correspondant à la commune
-et utilise \code{cdg_detect_links()} pour récupérer les feuilles disponibles.
+The function builds the URL for the municipality and uses \code{cdg_detect_links()}
+to retrieve the list of available sheets.
 }
 \seealso{
-\code{\link[=pci_construct_url(), cdg_construct_commune(), cdg_detect_links]{pci_construct_url(), cdg_construct_commune(), cdg_detect_links()}}
+\code{\link[=pci_construct_url]{pci_construct_url()}}, \code{\link[=cdg_construct_commune]{cdg_construct_commune()}}, \code{\link[=cdg_detect_links]{cdg_detect_links()}}
 }

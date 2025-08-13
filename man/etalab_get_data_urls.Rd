@@ -7,19 +7,21 @@
 etalab_get_data_urls(insee_code, data = NULL, ...)
 }
 \arguments{
-\item{insee_code}{Character vector. Vector of INSEE codes (communes or departments).}
+\item{insee_code}{\code{character} vector.
+Vector of INSEE codes (communes or departments).}
 
-\item{data}{NULL or list. If NULL, retrieves URLs for all available data types for each INSEE code.
+\item{data}{\code{list} or \code{NULL}. Defaut is \code{NULL}.
+If \code{NULL}, retrieves URLs for all available data types for each INSEE code.
 If a list, it can be named or unnamed:
 \itemize{
 \item unnamed list: length must match length of \code{insee_code}, each element is a vector of data types for corresponding INSEE code,
 \item named list: names correspond to INSEE codes, values are vectors of data types for those codes.
 }}
 
-\item{...}{Additional arguments passed to \code{etalab_get_data_url()}.}
+\item{...}{Additional arguments passed to \code{\link{etalab_construct_url}}.}
 }
 \value{
-A data.frame with columns:
+A \code{data.frame} with columns:
 \describe{
 \item{insee_code}{INSEE code (character).}
 \item{data}{Data type requested (character).}
@@ -49,4 +51,7 @@ etalab_get_data_urls(
 )
 }
 
+}
+\seealso{
+\code{\link[=etalab_get_data_url(), etalab_construct_url]{etalab_get_data_url(), etalab_construct_url()}}
 }

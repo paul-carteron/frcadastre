@@ -7,16 +7,16 @@
 pci_construct_url(format = "edigeo", scale = "feuilles", ...)
 }
 \arguments{
-\item{format}{Character. The desired data format. Allowed values are
-\code{"dxf"} and \code{"edigeo"}. Default is \code{"edigeo"}.}
+\item{format}{\code{character}. Default is \code{"edigeo"}.
+The desired data format. Allowed values are \code{"dxf"} and \code{"edigeo"}.}
 
-\item{scale}{Character. The scale level of the data. Allowed values are
-\code{"departements"} and \code{"feuilles"}. Default is \code{"feuilles"}.}
+\item{scale}{\code{character}. Default is \code{"feuilles"}.
+The scale level of the data. Allowed values are \code{"departements"} and \code{"feuilles"}.}
 
-\item{...}{Additional arguments passed to \code{cdg_construct_url()}.}
+\item{...}{Additional arguments passed to \code{\link{cdg_construct_url}}.}
 }
 \value{
-A character string representing the constructed download URL.
+A \code{character} string representing the constructed download URL.
 }
 \description{
 Constructs a URL for downloading PCI (Plan Cadastral Informatisé) data
@@ -31,4 +31,7 @@ url <- pci_construct_url(format = "edigeo", scale = "feuilles")
 url <- pci_construct_url(format = "dxf", scale = "departements")
 }
 
+}
+\seealso{
+\code{\link[=cdg_construct_url]{cdg_construct_url()}}
 }

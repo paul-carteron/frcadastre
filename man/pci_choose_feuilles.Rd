@@ -13,17 +13,19 @@ pci_choose_feuilles(
 )
 }
 \arguments{
-\item{commune}{Character. Commune code (e.g., INSEE code).}
+\item{commune}{\code{character}.
+Commune code (e.g., INSEE code).}
 
-\item{format}{Character. Data format, either \code{"edigeo"} or \code{"dxf"}. Default is \code{"edigeo"}.}
+\item{format}{\code{character}.
+Data format, either \code{"edigeo"} or \code{"dxf"}. Default is \code{"edigeo"}.}
 
-\item{skip}{Logical. If TRUE, strips the prefix (\verb{edigeo-} or \verb{dxf-}) and suffix (\code{.tar.bz2}) from the archive names.
-Default is FALSE.}
+\item{skip}{\code{logical}. Default is \code{FALSE}.
+If \code{TRUE}, strips the prefix (\verb{edigeo-} or \verb{dxf-}) and suffix (\code{.tar.bz2}) from the archive names.}
 
-\item{...}{Additional arguments passed to \code{pci_construct_url()}.}
+\item{...}{Additional arguments passed to \code{\link{pci_construct_url}}.}
 }
 \value{
-Character vector of archive names (with or without prefix/suffix depending on \code{skip}).
+A \code{character} vector of archive names (with or without prefix/suffix depending on \code{skip}).
 }
 \description{
 Retrieve the list of available PCI (Plan Cadastral Informatisé) feuille (sheet) archive names
@@ -42,4 +44,7 @@ archives <- pci_detect_feuilles("72187")
 archives_clean <- pci_detect_feuilles("72187", skip = TRUE)
 }
 
+}
+\seealso{
+\code{\link[=pci_construct_url]{pci_construct_url()}}
 }

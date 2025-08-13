@@ -13,12 +13,15 @@ get_cadastre_etalab(
 )
 }
 \arguments{
-\item{insee_code}{Character. The INSEE code for the commune or area to download data for.}
+\item{insee_code}{\code{character}
+the INSEE code for the commune or area to download data for.}
 
-\item{data}{Character vector or NULL. Specific datasets to download (e.g., \code{"parcelle"}, \code{"numvoie"}).
+\item{data}{\code{character} (vector or \code{NULL})
+specific datasets to download (e.g., \code{"parcelle"}, \code{"numvoie"}).
 If \code{NULL}, all available datasets for the INSEE code are retrieved.}
 
-\item{extract_dir}{Character or NULL. Directory path where downloaded files are extracted.
+\item{extract_dir}{\code{character} or \code{NULL}
+directory path where downloaded files are extracted.
 If \code{NULL}, a temporary unique directory is created automatically.}
 
 \item{overwrite}{Logical. Whether to overwrite existing downloaded files. Default is \code{TRUE}.}

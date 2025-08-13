@@ -13,19 +13,21 @@ cdg_download_archive(
 )
 }
 \arguments{
-\item{url}{\code{character} URL of the archive to download.}
+\item{url}{\code{character}. URL of the archive to download.}
 
-\item{destfile}{\code{character} Optional path to save the downloaded file.
+\item{destfile}{\code{character}.
+Optional path to save the downloaded file.
 If \code{NULL}, a temporary file with an appropriate extension is created.}
 
-\item{extract}{\code{logical} Whether to extract the archive after download.
-Defaults to \code{FALSE}.}
+\item{extract}{\code{logical}. Defaults is \code{FALSE}.
+Whether to extract the archive after download.}
 
-\item{extract_dir}{\code{character} Directory where the archive will be extracted
-if \code{extract} is \code{TRUE}. If \code{NULL}, a temporary directory is created.}
+\item{extract_dir}{\code{character}.
+Directory where the archive will be extracted.
+If \code{extract} is \code{TRUE}. If \code{NULL}, a temporary directory is created.}
 
-\item{overwrite}{\code{logical} Whether to overwrite the destination file if it
-already exists. Defaults to \code{FALSE}.}
+\item{overwrite}{\code{logical}. Defaults is \code{FALSE}.
+Whether to overwrite the destination file if it already exists.}
 }
 \value{
 If \code{extract} is \code{TRUE}, returns the path to the extraction directory.

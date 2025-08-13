@@ -7,8 +7,8 @@
 cdg_detect_links(url)
 }
 \arguments{
-\item{url}{\code{character}
-string specifying the URL of the webpage to scan.}
+\item{url}{\code{character}.
+String specifying the URL of the webpage to scan.}
 }
 \value{
 A \code{character} vector of unique URLs found in the href attributes on the page,

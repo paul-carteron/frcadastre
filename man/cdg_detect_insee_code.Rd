@@ -7,11 +7,14 @@
 cdg_detect_insee_code(insee_code, scale = FALSE, verbose = TRUE)
 }
 \arguments{
-\item{insee_code}{\code{character} or numeric INSEE code to validate.}
+\item{insee_code}{\code{character} or \code{numeric}.
+INSEE code to validate.}
 
-\item{scale}{\code{logical} If TRUE, return the detected scale ("communes" or "departements").}
+\item{scale}{\code{logical}.
+If \code{TRUE}, return the detected scale ("communes" or "departements").}
 
-\item{verbose}{\code{logical} If TRUE, print informative messages.}
+\item{verbose}{\code{logical}.
+If \code{TRUE}, print informative messages.}
 }
 \value{
 If \code{scale = TRUE}, returns the detected scale as a character string.

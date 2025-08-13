@@ -13,18 +13,22 @@ pci_get_feuille_urls(
 )
 }
 \arguments{
-\item{communes}{Character vector. Vector of allowed commune codes (e.g., INSEE codes).}
+\item{communes}{Character vector.
+Vector of allowed commune codes (e.g., INSEE codes).}
 
-\item{feuilles}{NULL or list. If NULL (default), retrieves all feuilles for all communes.
+\item{feuilles}{\code{list} or \code{NULL}. Default is \code{NULL}.
+If \code{NULL}, retrieves all feuilles for all communes.
 Otherwise, a list specifying feuilles per commune. The list can be named (names are commune codes)
 or unnamed (must have the same length as \code{communes}, each element is feuilles for the corresponding commune).}
 
-\item{format}{Character. Data format, either \code{"edigeo"} or \code{"dxf"}. Default is \code{"edigeo"}.}
+\item{format}{\code{character}. Default is \code{"edigeo"}.
+Data format, either \code{"edigeo"} or \code{"dxf"}.}
 
-\item{skip}{Logical. Passed to \code{pci_get_feuille_url()}. If TRUE, skips prefix/suffix in feuille names.
-Default is TRUE.}
+\item{skip}{\code{logical}. Default is \code{TRUE}.
+Passed to \code{pci_choose_feuilles()}.
+If \code{TRUE}, skips prefix/suffix in feuille names.}
 
-\item{...}{Additional arguments passed to underlying functions.}
+\item{...}{Additional arguments passed to \code{\link{pci_construct_url}}.}
 }
 \value{
 A data.frame with columns:

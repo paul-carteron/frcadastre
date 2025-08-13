@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{cfg_get_prefix_extent}
 \alias{cfg_get_prefix_extent}
-\title{Récupère le préfixe et l'extension selon le site, le format et l'échelle}
+\title{Get the configuration for a site, format, scale, and optional data}
 \usage{
 cfg_get_prefix_extent(
   site,
@@ -13,31 +13,29 @@ cfg_get_prefix_extent(
 )
 }
 \arguments{
-\item{site}{\code{character}.
-Nom du site, par ex. "pci" ou "etalab".}
+\item{site}{\code{character}. Name of the site to query.}
 
-\item{format}{\code{character}.
-Nom du format, par ex. "dxf", "edigeo", "shp", "geojson".}
+\item{format}{\code{character}. Default is \code{"edigeo"}.
+Format of the data (e.g., \code{"dxf"}, \code{"edigeo"}, \code{"geojson"}).}
 
-\item{scale}{\code{character}.
-Échelle ou subdivision, par ex. "departements", "feuilles", "communes".}
+\item{scale}{\code{character} or \code{numeric}.
+Scale identifier for the site/format.}
 
-\item{data}{\code{character}, \code{NULL} par défaut.
-Le type de donnée, par ex. "raw", "proc"}
+\item{data}{\code{character}, optional.
+Specific data within the scale configuration.}
 
-\item{config}{\code{list}.
-Configuration YAML déjà chargée (par défaut via cfg_load()).}
+\item{config}{\code{list}. Defaults to loading \code{cfg_load("cdg_structure.yaml")}.
+Configuration list, as returned by \code{\link{cfg_load}}.}
 }
 \value{
-Une liste contenant \code{prefix} et \code{extent}, ou d'autres champs s'ils sont définis.
+\code{list}. Configuration for the requested site/format/scale, or a specific data element if \code{data} is provided.
 }
 \description{
-Récupère le préfixe et l'extension selon le site, le format et l'échelle
+Retrieves the configuration details (prefixes, extents, etc.) for a given
+site, format, and scale from a site configuration YAML file. If \code{data} is
+provided, returns the configuration for that specific data; otherwise,
+returns the full configuration for the scale.
 }
-\examples{
-\dontrun{
-cfg <- cfg_load("cdg_structure.yaml")
-cfg_get_prefix_extent("pci", "dxf", "departements", config = cfg)
-cfg_get_prefix_extent("etalab", "geojson", "communes", config = cfg)
-}
+\seealso{
+\code{\link[=cfg_load]{cfg_load()}}
 }

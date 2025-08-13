@@ -7,13 +7,14 @@
 pci_get_dep_urls(departements, ...)
 }
 \arguments{
-\item{departements}{Character vector. Department codes (e.g., \code{c("72", "73")}).
+\item{departements}{\code{character} vector.
+Department codes (e.g., \code{c("72", "73")}).
 Each must be a valid department listed in \code{departement_2025$DEP}.}
 
-\item{...}{Additional arguments passed to \code{pci_get_dep_url()}.}
+\item{...}{Additional arguments passed to \code{\link{pci_get_dep_url}}.}
 }
 \value{
-A named character vector of URLs corresponding to each department code.
+A named \code{character} vector of URLs corresponding to each department code.
 }
 \description{
 Constructs download URLs for PCI (Plan Cadastral Informatisé) data
@@ -29,4 +30,7 @@ returns the resulting URLs in a vector.
 urls <- pci_get_dep_urls(c("72", "73"))
 }
 
+}
+\seealso{
+\code{\link[=pci_get_dep_url]{pci_get_dep_url()}}
 }

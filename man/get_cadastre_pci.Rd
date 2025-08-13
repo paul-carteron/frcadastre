@@ -15,7 +15,7 @@ get_cadastre_pci(
 }
 \arguments{
 \item{communes}{\code{character}
-vector of commune codes or names to download data for.}
+vector of commune codes to download data for.}
 
 \item{feuilles}{\code{character}
 vector of sheet identifiers to filter (optional).}

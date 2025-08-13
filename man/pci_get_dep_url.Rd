@@ -7,13 +7,14 @@
 pci_get_dep_url(departement, ...)
 }
 \arguments{
-\item{departement}{Character. The department code (e.g., \code{"72"}).
+\item{departement}{\code{character}.
+The department code (e.g., \code{"72"}).
 Must be a valid department listed in \code{departement_2025$DEP}.}
 
-\item{...}{Additional arguments passed to \code{pci_construct_url()}.}
+\item{...}{Additional arguments passed to \code{\link{cdg_construct_url}}.}
 }
 \value{
-A character string representing the constructed download URL
+A \code{character} string representing the constructed download URL
 for the specified department.
 }
 \description{
@@ -30,4 +31,7 @@ Uses internal helper functions to build the correct archive prefix and URL.
 url <- pci_get_dep_url("72")
 }
 
+}
+\seealso{
+\code{\link[=cdg_construct_url]{cdg_construct_url()}}
 }

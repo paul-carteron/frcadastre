@@ -13,15 +13,19 @@ pci_get_feuille_url(
 )
 }
 \arguments{
-\item{commune}{Character. Commune code (e.g., INSEE code).}
+\item{commune}{\code{character}.
+Commune code (e.g., INSEE code).}
 
-\item{feuille}{Character or NULL. Specific feuille(s) to get URLs for. If set to \code{"?"}, an interactive
+\item{feuille}{\code{character} or \code{NULL}.
+Specific feuille(s) to get URLs for. If set to \code{"?"}, an interactive
 menu is displayed allowing the user to select one or more feuilles.}
 
-\item{format}{Character. Data format, either \code{"edigeo"} or \code{"dxf"}. Default is \code{"edigeo"}.}
+\item{format}{\code{character}. Default is \code{"edigeo"}.
+Data format, either \code{"edigeo"} or \code{"dxf"}.}
 
-\item{skip}{Logical. Passed to \code{pci_choose_feuilles()}. If TRUE, skips prefix/suffix in feuille names.
-Default is TRUE.}
+\item{skip}{\code{logical}. Default is \code{TRUE}.
+Passed to \code{pci_choose_feuilles()}.
+If \code{TRUE}, skips prefix/suffix in feuille names.}
 
 \item{...}{Additional arguments passed to underlying functions.}
 }

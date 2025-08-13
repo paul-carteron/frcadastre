@@ -7,11 +7,11 @@
 cdg_detect_millesimes(site, allowed_sites = c("pci", "etalab"))
 }
 \arguments{
-\item{site}{\code{character}
-string indicating the data site to query. Must be one of \code{"pci"} or \code{"etalab"}.}
+\item{site}{\code{character}.
+String indicating the data site to query. Must be one of \code{"pci"} or \code{"etalab"}.}
 
-\item{allowed_sites}{\code{character}
-vector of allowed site names. Defaults to \code{c("pci", "etalab")}.}
+\item{allowed_sites}{\code{character}.
+Vector of allowed site names. Defaults to \code{c("pci", "etalab")}.}
 }
 \value{
 A \code{character} vector of unique year identifiers (millesimes) found on the site.

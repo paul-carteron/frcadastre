@@ -15,21 +15,21 @@ cdg_construct_url(
 )
 }
 \arguments{
-\item{site}{\code{character} Site identifier. Must be one of \code{allowed_sites}.}
+\item{site}{\code{character}. Site identifier. Must be one of \code{allowed_sites}.}
 
-\item{format}{\code{character} Data format. Must be one of \code{allowed_formats}.}
+\item{format}{\code{character}. Data format. Must be one of \code{allowed_formats}.}
 
-\item{scale}{\code{character} Data scale. Must be one of \code{allowed_scales}.}
+\item{scale}{\code{character}. Data scale. Must be one of \code{allowed_scales}.}
 
-\item{millesime}{\code{character} or \code{NULL} The desired data version.
+\item{millesime}{\code{character} or \code{NULL}. The desired data version.
 If \code{NULL}, the most recent millesime is used.}
 
-\item{allowed_sites}{\code{character} Vector of allowed site identifiers.
+\item{allowed_sites}{\code{character}. Vector of allowed site identifiers.
 Defaults to \code{c("pci", "etalab")}.}
 
-\item{allowed_formats}{\code{character} Vector of allowed formats.}
+\item{allowed_formats}{\code{character}. Vector of allowed formats.}
 
-\item{allowed_scales}{\code{character} Vector of allowed scales.}
+\item{allowed_scales}{\code{character}. Vector of allowed scales.}
 
 \item{...}{Additional arguments passed to \code{\link{cdg_detect_millesimes}}.}
 }

@@ -5,11 +5,14 @@
 #' into a specified directory, then reads all extracted GeoJSON files as `sf`
 #' objects. The data are aggregated and returned as a named list of `sf` objects.
 #'
-#' @param insee_code Character. The INSEE code for the commune or area to download data for.
-#' @param data Character vector or NULL. Specific datasets to download (e.g., `"parcelle"`, `"numvoie"`).
-#'   If `NULL`, all available datasets for the INSEE code are retrieved.
-#' @param extract_dir Character or NULL. Directory path where downloaded files are extracted.
-#'   If `NULL`, a temporary unique directory is created automatically.
+#' @param insee_code `character`
+#' the INSEE code for the commune or area to download data for.
+#' @param data `character` (vector or `NULL`)
+#' specific datasets to download (e.g., `"parcelle"`, `"numvoie"`).
+#' If `NULL`, all available datasets for the INSEE code are retrieved.
+#' @param extract_dir `character` or `NULL`
+#' directory path where downloaded files are extracted.
+#' If `NULL`, a temporary unique directory is created automatically.
 #' @param overwrite Logical. Whether to overwrite existing downloaded files. Default is `TRUE`.
 #' @param ... Additional arguments passed to `etalab_get_data_urls()`.
 #'
@@ -76,4 +79,51 @@ get_cadastre_etalab <- function(insee_code,
   sf_data <- read_geojson(extract_dir)
 
   return(sf_data)
+}
+
+#' Download and return a specific cadastre layer from Etalab
+#'
+#' Retrieves cadastral data for one or more INSEE codes from Etalab,
+#' optionally specifying the type of data layer (e.g., "parcelles" or "lieudit").
+#'
+#' @param insee_code `character` or `numeric`.
+#' Vector of INSEE codes for the communes to download.
+#' @param data `character`.
+#' Name of the data layer to retrieve. Default is `"parcelles"`.
+#' @param extract_dir `character` or `NULL`.
+#' Directory to extract downloaded files. If `NULL`, a temporary directory is used.
+#' @param overwrite `logical`.
+#' Should existing files be overwritten? Default is `TRUE`.
+#' @param ... Additional arguments passed to `get_cadastre_etalab()`.
+#'
+#' @return `sf` object. The requested cadastral layer with unique features.
+#'
+#' @importFrom sf st_drop_geometry
+#'
+#' @seealso \code{\link{get_cadastre_etalab}}
+#'
+#' @export
+#'
+get_quick_etalab <- function(insee_code, data = "parcelles", extract_dir = NULL, overwrite = TRUE, ...) {
+  # Get unique INSEE codes as character
+  unique_insee <- unique(as.character(insee_code))
+
+  # Create a list with "data" repeated for each unique INSEE code
+  data_list <- rep(list(data), length(unique_insee))
+
+  # Call get_cadastre_etalab with the vectorized arguments
+  sf_data <- get_cadastre_etalab(
+    insee_code = unique_insee,
+    data = data_list,
+    extract_dir = extract_dir,
+    overwrite = overwrite,
+    ...
+  )
+
+  # Check that the requested data layer exists and return it
+  if (!data %in% names(sf_data)) {
+    stop(sprintf("The '%s' layer was not found in the downloaded data.", data))
+  }
+
+  return(unique(sf_data[[data]]))
 }

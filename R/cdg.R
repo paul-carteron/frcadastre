@@ -3,8 +3,8 @@
 #' This function concatenates a base URL with one or more relative URL components
 #' into a single complete URL string.
 #'
-#' @param urls `character` vector of relative URL components to append.
-#' @param base_url `character` string representing the base URL.
+#' @param urls `character`. Vector of relative URL components to append.
+#' @param base_url `character`. String representing the base URL.
 #'
 #' @return A single `character` string containing the complete aggregated URL.
 #'
@@ -28,8 +28,8 @@ cdg_aggr_url <- function(urls, base_url){
 #'
 #' Reads the content of a webpage from a given URL and extracts all unique hyperlinks (href attributes).
 #'
-#' @param url `character`
-#' string specifying the URL of the webpage to scan.
+#' @param url `character`.
+#' String specifying the URL of the webpage to scan.
 #'
 #' @return A `character` vector of unique URLs found in the href attributes on the page,
 #'         excluding relative parent directory links ("../") and empty links.
@@ -74,10 +74,10 @@ cdg_detect_links <- function(url) {
 #'
 #' Retrieves and returns the list of available "millesimes" (year directories) from a specified data site.
 #'
-#' @param site `character`
-#' string indicating the data site to query. Must be one of `"pci"` or `"etalab"`.
-#' @param allowed_sites `character`
-#' vector of allowed site names. Defaults to `c("pci", "etalab")`.
+#' @param site `character`.
+#' String indicating the data site to query. Must be one of `"pci"` or `"etalab"`.
+#' @param allowed_sites `character`.
+#' Vector of allowed site names. Defaults to `c("pci", "etalab")`.
 #'
 #' @return A `character` vector of unique year identifiers (millesimes) found on the site.
 #'
@@ -121,8 +121,10 @@ cdg_detect_millesimes <- function(site,
 #' Allows the user to select a specific "millesime" (data year version) for a given site.
 #' If no millesime is specified, the function defaults to `"latest"`.
 #'
-#' @param site `character` string specifying the data site. Passed to \code{\link{cdg_detect_millesimes}}.
-#' @param millesime `character` specifying the desired millesime:
+#' @param site `character`.
+#' String specifying the data site. Passed to \code{\link{cdg_detect_millesimes}}.
+#' @param millesime `character`.
+#' Specifying the desired millesime:
 #'   - `NULL` → returns `"latest"`.
 #'   - `"?"` → opens an interactive menu to choose from available millesimes.
 #'   - otherwise, checks if the provided millesime exists.
@@ -185,15 +187,15 @@ cdg_choose_millesime <- function(site,
 #' Builds a URL for downloading data from a specified site, format, scale,
 #' and optionally a specific "millesime" (data version).
 #'
-#' @param site `character` Site identifier. Must be one of `allowed_sites`.
-#' @param format `character` Data format. Must be one of `allowed_formats`.
-#' @param scale `character` Data scale. Must be one of `allowed_scales`.
-#' @param millesime `character` or `NULL` The desired data version.
+#' @param site `character`. Site identifier. Must be one of `allowed_sites`.
+#' @param format `character`. Data format. Must be one of `allowed_formats`.
+#' @param scale `character`. Data scale. Must be one of `allowed_scales`.
+#' @param millesime `character` or `NULL`. The desired data version.
 #'   If `NULL`, the most recent millesime is used.
-#' @param allowed_sites `character` Vector of allowed site identifiers.
+#' @param allowed_sites `character`. Vector of allowed site identifiers.
 #'   Defaults to `c("pci", "etalab")`.
-#' @param allowed_formats `character` Vector of allowed formats.
-#' @param allowed_scales `character` Vector of allowed scales.
+#' @param allowed_formats `character`. Vector of allowed formats.
+#' @param allowed_scales `character`. Vector of allowed scales.
 #' @param ... Additional arguments passed to \code{\link{cdg_detect_millesimes}}.
 #'
 #' @return A `character` string representing the full download URL.
@@ -251,8 +253,8 @@ cdg_construct_url <- function(site,
 #' Constructs a path string for a given commune code by prepending
 #' the department code (first two characters) and joining them with a slash.
 #'
-#' @param commune `character` A commune code, typically a string where
-#'   the first two characters represent the department code.
+#' @param commune `character`.
+#' A commune code, typically a string where the first two characters represent the department code.
 #'
 #' @return A `character` string combining department and commune codes separated by a slash.
 #'
@@ -273,15 +275,17 @@ cdg_construct_commune <- function(commune){
 #' Downloads a file from the specified `url` to a destination file. Optionally,
 #' the downloaded archive can be extracted to a given directory.
 #'
-#' @param url `character` URL of the archive to download.
-#' @param destfile `character` Optional path to save the downloaded file.
-#'   If `NULL`, a temporary file with an appropriate extension is created.
-#' @param extract `logical` Whether to extract the archive after download.
-#'   Defaults to `FALSE`.
-#' @param extract_dir `character` Directory where the archive will be extracted
-#'   if `extract` is `TRUE`. If `NULL`, a temporary directory is created.
-#' @param overwrite `logical` Whether to overwrite the destination file if it
-#'   already exists. Defaults to `FALSE`.
+#' @param url `character`. URL of the archive to download.
+#' @param destfile `character`.
+#' Optional path to save the downloaded file.
+#' If `NULL`, a temporary file with an appropriate extension is created.
+#' @param extract `logical`. Defaults is `FALSE`.
+#' Whether to extract the archive after download.
+#' @param extract_dir `character`.
+#' Directory where the archive will be extracted.
+#' If `extract` is `TRUE`. If `NULL`, a temporary directory is created.
+#' @param overwrite `logical`. Defaults is `FALSE`.
+#' Whether to overwrite the destination file if it already exists.
 #'
 #' @return If `extract` is `TRUE`, returns the path to the extraction directory.
 #'   Otherwise, returns a `list` with components:
@@ -290,9 +294,11 @@ cdg_construct_commune <- function(commune){
 #'
 #' @importFrom utils download.file
 #' @importFrom tools file_ext
+#'
 #' @seealso [archive::archive_extract()], [archive::archive()]
 #'
 #' @export
+#'
 cdg_download_archive <- function(url,
                                  destfile = NULL,
                                  extract = FALSE,
@@ -360,18 +366,21 @@ cdg_download_archive <- function(url,
 #' Downloads multiple archives from the given `urls`. Each archive can be
 #' extracted to either a unique subdirectory or a common extraction directory.
 #'
-#' @param urls `character` Vector of URLs to download.
-#' @param destfiles `character` Optional vector of file paths to save the downloaded
-#'   files. If `NULL`, temporary files are created. Must have the same length as `urls`.
-#' @param extract `logical` Whether to extract the archives after downloading.
-#'   Defaults to `FALSE`.
-#' @param extract_dir `character` Directory where archives will be extracted.
-#'   If `NULL`, the system temporary directory is used.
-#' @param overwrite `logical` Whether to overwrite existing downloaded files.
-#'   Defaults to `FALSE`.
-#' @param use_subdirs `logical` If `TRUE`, each archive is extracted into its own
-#'   subdirectory within `extract_dir`. Otherwise, all archives are extracted into
-#'   `extract_dir` directly. Defaults to `FALSE`.
+#' @param urls `character`.
+#' Vector of URLs to download.
+#' @param destfiles `character`.
+#' Optional vector of file paths to save the downloaded files.
+#' If `NULL`, temporary files are created. Must have the same length as `urls`.
+#' @param extract `logical`. Defaults is `FALSE`.
+#' Whether to extract the archives after downloading.
+#' @param extract_dir `character`.
+#' Directory where archives will be extracted.
+#' If `NULL`, the system temporary directory is used.
+#' @param overwrite `logical`. Defaults to `FALSE`.
+#' Whether to overwrite existing downloaded files.
+#' @param use_subdirs `logical`. Defaults to `FALSE`.
+#' If `TRUE`, each archive is extracted into its own subdirectory within `extract_dir`.
+#' Otherwise, all archives are extracted into `extract_dir` directly.
 #'
 #' @return A list of extraction directories used for each archive. Length equals
 #'   the number of `urls`.
@@ -380,6 +389,7 @@ cdg_download_archive <- function(url,
 #' @seealso [cdg_download_archive()]
 #'
 #' @export
+#'
 cdg_download_archives <- function(urls,
                                   destfiles = NULL,
                                   extract = FALSE,
@@ -436,14 +446,18 @@ cdg_download_archives <- function(urls,
 #' Checks if the provided INSEE code is valid among communes or départements,
 #' optionally returning the scale ("communes" or "departements").
 #'
-#' @param insee_code `character` or numeric INSEE code to validate.
-#' @param scale `logical` If TRUE, return the detected scale ("communes" or "departements").
-#' @param verbose `logical` If TRUE, print informative messages.
+#' @param insee_code `character` or `numeric`.
+#' INSEE code to validate.
+#' @param scale `logical`.
+#' If `TRUE`, return the detected scale ("communes" or "departements").
+#' @param verbose `logical`.
+#' If `TRUE`, print informative messages.
 #'
 #' @return If `scale = TRUE`, returns the detected scale as a character string.
 #' Otherwise, returns nothing but throws an error if invalid.
 #'
 #' @export
+#'
 cdg_detect_insee_code <- function(insee_code, scale = FALSE, verbose = TRUE) {
   insee_code <- as.character(insee_code)
   communes <- rcadastre::commune_2025

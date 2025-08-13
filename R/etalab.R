@@ -2,11 +2,13 @@
 #'
 #' Constructs a URL to access Etalab data for a specified scale.
 #'
-#' @param scale Character. Scale of data to retrieve. Must be one of `"departements"` or `"communes"`.
-#'   Default is `"communes"`.
-#' @param ... Additional arguments passed to `cdg_construct_url()`.
+#' @param scale `character`. Default is `"communes"`.
+#' Scale of data to retrieve. Must be one of `"departements"` or `"communes"`.
+#' @param ... Additional arguments passed to \code{\link{cdg_construct_url}}.
 #'
-#' @return Character string with the constructed URL.
+#' @return A `character` string with the constructed URL.
+#'
+#' @seealso [cdg_construct_url()]
 #'
 #' @examples
 #' \dontrun{
@@ -32,16 +34,20 @@ etalab_construct_url <- function(scale = "communes",
 #'
 #' Constructs the download URL for Etalab data based on the INSEE code and requested data type.
 #'
-#' @param insee_code Character. INSEE code of the geographic unit (commune or department).
-#' @param data Character. Type of data to retrieve. Must be one of the allowed data types for the given scale.
-#' @param ... Additional arguments passed to `etalab_construct_url()` and other internal functions.
+#' @param insee_code `character`.
+#' INSEE code of the geographic unit (commune or department).
+#' @param data `character`.
+#' Type of data to retrieve. Must be one of the allowed data types for the given scale.
+#' @param ... Additional arguments passed to \code{\link{etalab_construct_url}}.
 #'
-#' @return Character string with the constructed URL.
+#' @return A `character` string with the constructed URL.
 #'
 #' @details
 #' The function automatically detects the geographic scale (commune or department) from the INSEE code,
 #' builds the corresponding URL, and verifies the data type is allowed. It constructs the full URL
 #' including the archive prefix and extension.
+#'
+#' @seealso [etalab_construct_url()]
 #'
 #' @examples
 #' \dontrun{
@@ -90,14 +96,16 @@ etalab_get_data_url <- function(insee_code, data, ...){
 #'
 #' Constructs download URLs for Etalab data for a vector of INSEE codes and optionally specified data types.
 #'
-#' @param insee_code Character vector. Vector of INSEE codes (communes or departments).
-#' @param data NULL or list. If NULL, retrieves URLs for all available data types for each INSEE code.
-#'   If a list, it can be named or unnamed:
+#' @param insee_code `character` vector.
+#' Vector of INSEE codes (communes or departments).
+#' @param data `list` or `NULL`. Defaut is `NULL`.
+#' If `NULL`, retrieves URLs for all available data types for each INSEE code.
+#' If a list, it can be named or unnamed:
 #'   - unnamed list: length must match length of `insee_code`, each element is a vector of data types for corresponding INSEE code,
 #'   - named list: names correspond to INSEE codes, values are vectors of data types for those codes.
-#' @param ... Additional arguments passed to `etalab_get_data_url()`.
+#' @param ... Additional arguments passed to \code{\link{etalab_construct_url}}.
 #'
-#' @return A data.frame with columns:
+#' @return A `data.frame` with columns:
 #' \describe{
 #'   \item{insee_code}{INSEE code (character).}
 #'   \item{data}{Data type requested (character).}
@@ -108,6 +116,8 @@ etalab_get_data_url <- function(insee_code, data, ...){
 #' This function supports flexible specification of data types to retrieve for each INSEE code.
 #' If `data` is NULL, all data types available for each INSEE code's scale are returned.
 #' The function internally validates arguments and constructs URLs using `etalab_get_data_url()`.
+#'
+#' @seealso [etalab_get_data_url(), etalab_construct_url()]
 #'
 #' @examples
 #' \dontrun{
@@ -125,6 +135,7 @@ etalab_get_data_url <- function(insee_code, data, ...){
 #' }
 #'
 #' @export
+#'
 etalab_get_data_urls <- function(insee_code,     # vecteur de codes INSEE
                                  data = NULL,     # liste nommée ou non nommée : données par code INSEE, ou NULL = toutes données
                                  ...) {

@@ -1,14 +1,18 @@
 Package: rcadastre
-Title: What the Package Does (One Line, Title Case)
+Title: Download and extract french cadastre 
 Version: 0.0.0.9000
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
+    person("Matthieu", "Chevereau", , "matthieu.chevereau@hotmail.com", role = c("aut", "cre"))
+Description: Builds URLs, downloads, and extracts data from the French cadastre portal (<https://cadastre.data.gouv.fr/>). It distinguishes 
+    between "PCI" (Plan Cadastral Informatisé) data and "Etalab" datasets.
 License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
     license
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
+Imports:
+    sf,
+    yaml
 Depends: 
     R (>= 3.5)
 LazyData: true

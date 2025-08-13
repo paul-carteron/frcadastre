@@ -4,7 +4,7 @@
 #' extracts all files into a single directory, and reads the spatial data into an `sf` object or list of `sf`.
 #'
 #' @param communes `character`
-#' vector of commune codes or names to download data for.
+#' vector of commune codes to download data for.
 #' @param feuilles `character`
 #' vector of sheet identifiers to filter (optional).
 #' @param format `character`

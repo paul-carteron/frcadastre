@@ -10,6 +10,11 @@
 #'
 #' @return `character` A 14-character unique ID (IDU).
 #'
+#' @details
+#' Some IDs do not include the department code.
+#' In such cases, it needs to be specified manually,
+#' which is why `dep` is by defaut set to `NULL`
+#'
 #' @examples
 #' idu_build(dep = "01", com = "002", prefix = "0", section = "A", numero = "12")
 #'
@@ -48,11 +53,16 @@ idu_build <- function(dep = NULL, com, prefix = "0", section, numero) {
 #'
 #' @return data.frame. Input data frame with an additional `idu` column.
 #'
+#' @details
+#' Some IDs do not include the department code.
+#' In such cases, it needs to be specified manually,
+#' which is why `col_dep` is by defaut set to `NULL`.
+#'
+#' @seealso [idu_build()]
+#'
 #' @examples
 #' df <- data.frame(dep="01", com="002", prefix="0", section="A", number="12")
 #' idu_fill_df(df, "com", "prefix", "section", "number", "dep")
-#'
-#' @seealso [idu_build()]
 #'
 #' @export
 #'
@@ -97,38 +107,81 @@ idu_fill_df <- function(df,
 
 #' Split IDU into Its Components
 #'
-#' Splits a 14-character parcel IDU into department, commune, prefix, section, and number.
+#' Splits a French cadastral parcel IDU (Identifiant de parcelle) into its
+#' administrative and cadastral components: department, commune, prefix,
+#' section, and parcel number.
+#' Optionally adds region codes and names for all administrative levels.
 #'
 #' @param idu `character`
-#' A vector of IDU codes.
-#' @param col_dep `character`
-#' Name for the department column (default `"dep"`).
-#' @param col_com `character`
-#' Name for the commune column (default `"com"`).
-#' @param col_prefix `character`
-#' Name for the prefix column (default `"prefix"`).
-#' @param col_section `character`
-#' Name for the section column (default `"section"`).
-#' @param col_number `character`
-#' Name for the number column (default `"number"`).
+#' A vector of IDU codes (14 characters each). Non-character inputs will be coerced.
 #'
-#' @return data.frame. Columns corresponding to the components of the IDU.
+#' @param col_dep,col_com,col_prefix,col_section,col_number `character`
+#' Names to use for the department, commune, prefix, section, and number columns
+#' in the returned data frame.
+#'
+#' @param add_reg `logical`
+#' If `TRUE` (default), add a column with the region code corresponding to the department.
+#'
+#' @param col_name `character` or `NULL`
+#' If provided, this column name from the `rcadastre` reference tables will be
+#' used to add labels for region, department, and commune.
+#' Common choices: `"NOM_DEP"`, `"NOM_REG"`, `"NOM_COM"`.
+#'
+#' @return A `data.frame` with one row per IDU and columns for the components:
+#' - Department
+#' - Commune
+#' - Prefix
+#' - Section
+#' - Number
+#' Optionally, region codes and labels are added.
+#'
+#' @details
+#' The IDU structure is:
+#' ```
+#' [1-2]   : Department code (DEP)
+#' [3-5]   : Commune code (COM)
+#' [6-8]   : Prefix code
+#' [9-10]  : Section code
+#' [11-14] : Parcel number
+#' ```
+#' Reference datasets are taken from `rcadastre::region_2025`,
+#' `rcadastre::departement_2025`, and `rcadastre::commune_2025`.
 #'
 #' @examples
+#' # Basic split
 #' idu_split("0100200A0012")
 #'
-#' @export
+#' # Add region and labels
+#' idu_split("0100200A0012", add_reg = TRUE, col_name = "NOM_DEP")
 #'
+#' @export
 idu_split <- function(idu,
                       col_dep = "dep",
-                      col_com = "com",
-                      col_prefix = "prefix",
+                      col_com = "commune",
+                      col_prefix = "prefixe",
                       col_section = "section",
-                      col_number = "number") {
+                      col_number = "numero",
+                      add_reg = TRUE,
+                      col_name = NULL) {
+
+  # Coerce to character and validate length
   idu <- as.character(idu)
-  if (!all(nchar(idu) == 14)) {
-    stop("All IDU codes must have exactly 14 characters.")
+  if (length(idu) == 0L) {
+    stop("`idu` must not be empty.", call. = FALSE)
   }
+  if (anyNA(idu)) {
+    stop("`idu` contains NA values. Remove or replace them before calling.", call. = FALSE)
+  }
+  if (!all(nchar(idu) == 14)) {
+    stop("All IDU codes must have exactly 14 characters.", call. = FALSE)
+  }
+
+  # Reference datasets
+  regs <- rcadastre::region_2025
+  deps <- rcadastre::departement_2025
+  coms <- rcadastre::commune_2025
+
+  # Base split
   res <- data.frame(
     dep     = substr(idu, 1, 2),
     com     = substr(idu, 3, 5),
@@ -138,7 +191,56 @@ idu_split <- function(idu,
     stringsAsFactors = FALSE
   )
   names(res) <- c(col_dep, col_com, col_prefix, col_section, col_number)
-  return(res)
+
+  # Internal helper
+  .merge_with_name <- function(res, df, refx, refy, ini_col, fincol) {
+    if (!all(c(refy, ini_col) %in% names(df))) {
+      stop(sprintf("Reference columns '%s' and/or '%s' not found in reference data frame.",
+                   refy, ini_col), call. = FALSE)
+    }
+    if (!refx %in% names(res)) {
+      stop(sprintf("Column '%s' not found in data to merge.", refx), call. = FALSE)
+    }
+    res <- merge(
+      res,
+      df[, c(refy, ini_col), drop = FALSE],
+      by.x = refx,
+      by.y = refy,
+      all.x = TRUE,
+      all.y = FALSE
+    )
+    names(res)[names(res) == ini_col] <- fincol
+    res
+  }
+
+  # Optionally add region code
+  if (isTRUE(add_reg)) {
+    res <- .merge_with_name(res, deps, col_dep, "DEP", "REG", "reg")
+  }
+
+  # Optionally add names
+  if (!is.null(col_name)) {
+    if (!is.character(col_name) || length(col_name) != 1L) {
+      stop("`col_name` must be a single string naming a column in the reference tables.", call. = FALSE)
+    }
+    if (!col_name %in% names(deps) || !col_name %in% names(coms) || !col_name %in% names(regs)) {
+      warning("`col_name` not found in all reference datasets; only available names will be added.", call. = FALSE)
+    }
+
+    res$insee <- paste0(res[[col_dep]], res[[col_com]])
+
+    if (isTRUE(add_reg) && col_name %in% names(regs)) {
+      res <- .merge_with_name(res, regs, "reg", "REG", col_name, "reg_name")
+    }
+    if (col_name %in% names(deps)) {
+      res <- .merge_with_name(res, deps, col_dep, "DEP", col_name, "dep_name")
+    }
+    if (col_name %in% names(coms)) {
+      res <- .merge_with_name(res, coms, "insee", "COM", col_name, "commune_name")
+    }
+  }
+
+  res
 }
 
 #' Associate Lieudits to Parcelles
@@ -155,7 +257,7 @@ idu_split <- function(idu,
 #' @importFrom sf st_centroid st_join st_intersects st_drop_geometry
 #' @seealso [idu_get_parcelle()]
 #'
-#' @NoRd
+#' @Export
 #'
 lieudits_for_parcelles <- function(parcelles, lieudits){
   parcelles_centroids <- sf::st_centroid(parcelles)

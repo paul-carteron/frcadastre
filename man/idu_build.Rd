@@ -23,6 +23,11 @@ idu_build(dep = NULL, com, prefix = "0", section, numero)
 \description{
 Constructs a standardized 14-character ID for a parcel based on department, commune, prefix, section, and number.
 }
+\details{
+Some IDs do not include the department code.
+In such cases, it needs to be specified manually,
+which is why \code{dep} is by defaut set to \code{NULL}
+}
 \examples{
 idu_build(dep = "01", com = "002", prefix = "0", section = "A", numero = "12")
 

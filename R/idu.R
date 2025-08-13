@@ -257,15 +257,15 @@ idu_split <- function(idu,
 #' @importFrom sf st_centroid st_join st_intersects st_drop_geometry
 #' @seealso [idu_get_parcelle()]
 #'
-#' @Export
+#' @export
 #'
-lieudits_for_parcelles <- function(parcelles, lieudits){
+lieudits_for_parcelles <- function(parcelles, lieudits, col_idu = "id"){
   parcelles_centroids <- sf::st_centroid(parcelles)
   intersections <- sf::st_join(parcelles_centroids, lieudits, left = TRUE, join = sf::st_intersects) |>
     transform(lieudit = nom) |>
-    subset(select = c("id", "lieudit")) |>
+    subset(select = c(col_idu, "lieudit")) |>
     sf::st_drop_geometry()
-  result <- merge(parcelles, intersections, by = "id", all = TRUE)
+  result <- merge(parcelles, intersections, by = col_idu, all = TRUE)
   return(result)
 }
 

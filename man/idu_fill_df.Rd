@@ -25,6 +25,11 @@ data.frame. Input data frame with an additional \code{idu} column.
 \description{
 Adds an \code{idu} column to a data frame using parcel components.
 }
+\details{
+Some IDs do not include the department code.
+In such cases, it needs to be specified manually,
+which is why \code{col_dep} is by defaut set to \code{NULL}.
+}
 \examples{
 df <- data.frame(dep="01", com="002", prefix="0", section="A", number="12")
 idu_fill_df(df, "com", "prefix", "section", "number", "dep")

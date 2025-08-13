@@ -4,7 +4,7 @@
 \alias{lieudits_for_parcelles}
 \title{Associate Lieudits to Parcelles}
 \usage{
-lieudits_for_parcelles(parcelles, lieudits)
+lieudits_for_parcelles(parcelles, lieudits, col_idu = "id")
 }
 \arguments{
 \item{parcelles}{\code{sf} object.

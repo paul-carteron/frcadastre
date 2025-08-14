@@ -41,6 +41,8 @@ cdg:
             extent: ".json.gz"
             data: &proc_data
               - batiments
+              - communes
+              - feuilles
               - lieux_dits
               - parcelles
               - prefixes_sections

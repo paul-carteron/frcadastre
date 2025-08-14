@@ -13,8 +13,13 @@
 #' @param extract_dir `character` or `NULL`
 #' directory path where downloaded files are extracted.
 #' If `NULL`, a temporary unique directory is created automatically.
-#' @param overwrite Logical. Whether to overwrite existing downloaded files. Default is `TRUE`.
+#' @param overwrite `logical`.
+#' Whether to overwrite existing downloaded files. Default is `TRUE`.
 #' @param ... Additional arguments passed to `etalab_get_data_urls()`.
+#' @param warn `logical`. Default is `TRUE`.
+#' If `TRUE`, warnings about missing URLs, failed downloads,
+#' missing GeoJSON files, or failed reads will be displayed. If FALSE, these warnings are suppressed
+#' and the function will return NULL silently when issues occur.
 #'
 #' @return A named list of `sf` objects containing the downloaded and read spatial data.
 #'   Each list element corresponds to a dataset (e.g., `"parcelle"`, `"numvoie"`), aggregated
@@ -44,39 +49,62 @@ get_cadastre_etalab <- function(insee_code,
                                 data = NULL,
                                 extract_dir = NULL,
                                 overwrite = TRUE,
+                                verbose = FALSE,
+                                warn = TRUE,
                                 ...) {
 
-  # 1. Récupérer les URLs
+  .war <- function(...) if (isTRUE(verbose)) warning(...)
+
+  # 1. Build URL table
   urls_df <- etalab_get_data_urls(insee_code, data = data, ...)
 
   if (nrow(urls_df) == 0) {
-    stop("Aucune URL trouvée pour les paramètres fournis.")
+    stop("No URL found for provided parameters.")
   }
 
-  # Crée un répertoire temporaire unique si non fourni
+  # Create temporary directory if not specified
   if (is.null(extract_dir)) {
     extract_dir <- tempfile(pattern = "cadastre_extract_")
     dir.create(extract_dir, recursive = TRUE)
   }
 
-  # Définir les fichiers de destination dans ce répertoire
+  # Build destination file names
   urls_df$destfile <- file.path(
     extract_dir,
     paste0("pci-", urls_df$insee_code, "-", urls_df$data, ".json.gz")
   )
 
-  # 2. Télécharger et extraire TOUS les fichiers dans extract_dir
-  download_results <- cdg_download_archives(
-    urls = urls_df$url,
-    destfiles = urls_df$destfile,
-    extract = TRUE,
-    extract_dir = extract_dir,
-    overwrite = overwrite,
-    use_subdirs = FALSE
+  # 2. Download and extract (with httr2 inside cdg_download_archives)
+  download_results <- tryCatch(
+    cdg_download_archives(
+      urls = urls_df$url,
+      destfiles = urls_df$destfile,
+      extract = TRUE,
+      extract_dir = extract_dir,
+      overwrite = overwrite,
+      use_subdirs = FALSE,
+      verbose = verbose,
+      warn = warn
+    ),
+    error = function(e) {
+      .war("Download step failed: ", conditionMessage(e))
+      return(NULL)
+    }
   )
 
-  # 3. Lire tous les fichiers extraits dans extract_dir
-  sf_data <- read_geojson(extract_dir)
+  # Remove failed downloads
+  if (is.null(download_results)) {
+    return(NULL)
+  }
+
+  # 3. Read only valid GeoJSON files
+  sf_data <- tryCatch(
+    read_geojson(extract_dir),
+    error = function(e) {
+      .war("Failed to read GeoJSON: ", conditionMessage(e))
+      return(NULL)
+    }
+  )
 
   return(sf_data)
 }
@@ -95,6 +123,9 @@ get_cadastre_etalab <- function(insee_code,
 #' @param overwrite `logical`.
 #' Should existing files be overwritten? Default is `TRUE`.
 #' @param ... Additional arguments passed to `get_cadastre_etalab()`.
+#' @param warn `logical`. Default is `TRUE`.
+#' If `TRUE`, warnings about missing layers in the downloaded data
+#' will be displayed. If FALSE, these warnings are suppressed and the function returns `NULL` silently.
 #'
 #' @return `sf` object. The requested cadastral layer with unique features.
 #'
@@ -104,25 +135,24 @@ get_cadastre_etalab <- function(insee_code,
 #'
 #' @export
 #'
-get_quick_etalab <- function(insee_code, data = "parcelles", extract_dir = NULL, overwrite = TRUE, ...) {
-  # Get unique INSEE codes as character
-  unique_insee <- unique(as.character(insee_code))
+get_quick_etalab <- function(insee_code, data = "parcelles", extract_dir = NULL,
+                             overwrite = TRUE, warn = TRUE, ...) {
 
-  # Create a list with "data" repeated for each unique INSEE code
+  unique_insee <- unique(as.character(insee_code))
   data_list <- rep(list(data), length(unique_insee))
 
-  # Call get_cadastre_etalab with the vectorized arguments
   sf_data <- get_cadastre_etalab(
     insee_code = unique_insee,
     data = data_list,
     extract_dir = extract_dir,
     overwrite = overwrite,
+    warn = FALSE,
     ...
   )
 
-  # Check that the requested data layer exists and return it
-  if (!data %in% names(sf_data)) {
-    stop(sprintf("The '%s' layer was not found in the downloaded data.", data))
+  if (is.null(sf_data) || !data %in% names(sf_data)) {
+    if (warn) warning(sprintf("Data '%s' not found in 'etalab' query.", data))
+    return(NULL)
   }
 
   return(unique(sf_data[[data]]))

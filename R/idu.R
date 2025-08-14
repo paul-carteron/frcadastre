@@ -343,6 +343,111 @@ idu_split <- function(idu) {
   res
 }
 
+#' Get feuille IDs from IDU codes
+#'
+#' This function takes one or more IDU codes, validates them, extracts their
+#' INSEE and feuille components, downloads feuille data from Etalab, and returns
+#' the matching feuille IDs.
+#'
+#' @param idu A `character` vector of valid IDU codes.
+#'
+#' @return A `character` vector of feuille IDs corresponding to the input IDUs.
+#'
+#'
+#' @examples
+#' \dontrun{
+#' # Get feuille IDs for a set of IDU codes
+#' idu_get_feuille(c("12345ABCDE6789", "54321ZZZZZ1234"))
+#' }
+#'
+#' @export
+#'
+idu_get_feuille <- function(idu, group_by_insee = FALSE) {
+  # Validate IDUs
+  valid <- idu_check(idu)
+  if (!all(valid)) {
+    stop(
+      "Invalid IDU(s) detected: ",
+      paste(idu[!valid], collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  # Split IDU into parts (must return: code_dep, code_reg, insee, etc.)
+  idu_parts <- idu_split(idu)
+
+  # Get unique INSEE and feuille codes
+  insee_codes <- unique(idu_parts$insee)
+  feuilles_codes <- unique(substr(idu, 1, 10))
+
+  # Download feuilles from Etalab
+  feuilles <- get_quick_etalab(insee_codes, "feuilles") |>
+    transform(codes = substr(id, 1, 10))
+
+  # Keep only feuilles matching the provided IDUs
+  selected_feuilles <- feuilles[feuilles$codes %in% feuilles_codes, c("id", "commune")] |>
+    sf::st_drop_geometry()
+
+  if (group_by_insee) {
+    # Group feuille IDs by insee
+    feuilles_list <- lapply(
+      insee_codes,
+      function(code) selected_feuilles$id[selected_feuilles$commune == code]
+    )
+    return(list(insee_code = insee_codes, feuilles = feuilles_list))
+  } else {
+    # Return flat vector of feuille IDs
+    return(selected_feuilles$id)
+  }
+}
+
+' Get feuille IDs from IDU codes in a data.frame
+#'
+#' This function detects the column containing IDU codes in a given
+#' `data.frame` or `sf` object, validates the codes, and retrieves the
+#' corresponding feuille identifiers from the Etalab reference dataset.
+#'
+#' @param df A `data.frame` or `sf` object containing at least one column
+#'   with valid IDU codes.
+#'
+#' @return The input `df` with an additional column `feuille_id`
+#'   containing the feuille identifiers corresponding to each IDU.
+#'
+#' @examples
+#' \dontrun{
+#' df <- data.frame(
+#'   idu_code = c("12345ABCDE6789", "54321ZZZZZ1234")
+#' )
+#' idu_get_feuille_in_df(df)
+#' }
+#'
+#' @seealso [idu_get_feuille()], [idu_detect_in_df()]
+#'
+#' @export
+#'
+idu_get_feuille_in_df <- function(df) {
+  # Validate input type
+  if (!inherits(df, c("data.frame", "sf"))) {
+    stop("'df' must be a data.frame or sf object.", call. = FALSE)
+  }
+
+  # Detect IDU column
+  idu_info <- idu_detect_in_df(df, "both")
+  if (is.null(idu_info)) {
+    stop("No valid IDU column found in data.frame.", call. = FALSE)
+  }
+  idu_colname <- idu_info$name
+
+  # Get feuille IDs from IDUs
+  feuille_data <- idu_get_feuille(
+    idu = df[[idu_colname]]
+  )
+
+  # Bind the feuille column to the original df (preserve order)
+  df$feuille_id <- feuille_data
+  df
+}
+
 #' Get region/department/commune names from IDU codes
 #'
 #' This function takes one or more IDU codes, validates them, splits them into
@@ -487,6 +592,11 @@ idu_get_lieudit <- function(idu){
   # Download data from Etalab
   parcelles <- get_quick_etalab(insee_codes) |> idu_rename_in_df("idu")
   lieudits <- get_quick_etalab(insee_codes, "lieux_dits")
+
+  # Check for NA in 'nom' field of lieudits
+  if (any(is.na(lieudits$nom)) || is.null(lieudits)) {
+    warning("Some lieu-dit names are missing (NA) in the 'etalab' data. Try with 'edigeo'.")
+  }
 
   # Ensure returned objects are sf
   if (!inherits(parcelles, "sf") || !inherits(lieudits, "sf")) {

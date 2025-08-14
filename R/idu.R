@@ -760,7 +760,7 @@ idu_get_contenance_in_df <- function(df) {
   idu_colname <- idu_info$name
 
   # Extract IDU vector
-  idu_vec <- df[[idu_col]]
+  idu_vec <- df[[idu_colname]]
 
   # Retrieve contenance values
   contenance_df <- idu_get_contenance(idu_vec)[, c("idu", "contenance"), drop = FALSE]

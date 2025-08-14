@@ -185,10 +185,9 @@ idu_detect_in_df <- function(df, output = c("both", "name", "position")) {
       if (output == "name") return(names(df)[i])
       if (output == "position") return(i)
       return(list(name = names(df)[i], position = i))
-    } else {
-      message("No column matches the IDU pattern.")
     }
   }
+  message("No column matches the IDU pattern.")
 
   # No match found
   return(NULL)
@@ -593,18 +592,13 @@ idu_get_lieudit <- function(idu){
   parcelles <- get_quick_etalab(insee_codes) |> idu_rename_in_df("idu")
   lieudits <- get_quick_etalab(insee_codes, "lieux_dits")
 
-  # Check for NA in 'nom' field of lieudits
-  if (any(is.na(lieudits$nom)) || is.null(lieudits)) {
-    warning("Some lieu-dit names are missing (NA) in the 'etalab' data. Try with 'edigeo'.")
-  }
-
   # Ensure returned objects are sf
   if (!inherits(parcelles, "sf") || !inherits(lieudits, "sf")) {
     stop("Etalab data must be 'sf' objects.", call. = FALSE)
   }
 
   # Compute centroids of parcels for spatial join
-  parcelles_centroids <- sf::st_centroid(parcelles)
+  parcelles_centroids <- suppressWarnings(sf::st_centroid(parcelles))
 
   # Join parcels with lieu-dit polygons
   intersections <- sf::st_join(parcelles_centroids,
@@ -612,6 +606,11 @@ idu_get_lieudit <- function(idu){
                                left = TRUE,
                                join = sf::st_intersects
                                ) |> sf::st_drop_geometry()
+
+  # Check for NA in 'nom' field of lieudits
+  if (any(is.na(intersections$nom)) || is.null(intersections)) {
+    warning("Some lieu-dit names are missing (NA) in the 'etalab' data.")
+  }
 
   # Merge
   res <- .merge_with_name(idu_parts, intersections,
@@ -654,7 +653,7 @@ idu_get_lieudit_in_df <- function(df) {
   idu_colname <- idu_info$name
 
   # Extract IDU vector
-  idu_vec <- df[[idu_col]]
+  idu_vec <- df[[idu_colname]]
 
   # Retrieve lieudit names
   lieudit_df <- idu_get_lieudit(idu_vec)[, c("idu", "lieudit"), drop = FALSE]
@@ -663,7 +662,7 @@ idu_get_lieudit_in_df <- function(df) {
   df <- merge(
     df,
     lieudit_df,
-    by.x = idu_col,
+    by.x = idu_colname,
     by.y = "idu",
     all.x = TRUE
   )
@@ -769,7 +768,7 @@ idu_get_contenance_in_df <- function(df) {
   df <- merge(
     df,
     contenance_df,
-    by.x = idu_col,
+    by.x = idu_colname,
     by.y = "idu",
     all.x = TRUE
   )

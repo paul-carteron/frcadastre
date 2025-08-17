@@ -9,6 +9,7 @@ get_quick_etalab(
   data = "parcelles",
   extract_dir = NULL,
   overwrite = TRUE,
+  warn = TRUE,
   ...
 )
 }
@@ -24,6 +25,10 @@ Directory to extract downloaded files. If \code{NULL}, a temporary directory is 
 
 \item{overwrite}{\code{logical}.
 Should existing files be overwritten? Default is \code{TRUE}.}
+
+\item{warn}{\code{logical}. Default is \code{TRUE}.
+If \code{TRUE}, warnings about missing layers in the downloaded data
+will be displayed. If FALSE, these warnings are suppressed and the function returns \code{NULL} silently.}
 
 \item{...}{Additional arguments passed to \code{get_cadastre_etalab()}.}
 }

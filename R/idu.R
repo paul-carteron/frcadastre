@@ -590,7 +590,15 @@ idu_get_lieudit <- function(idu){
 
   # Download data from Etalab
   parcelles <- get_quick_etalab(insee_codes) |> idu_rename_in_df("idu")
-  lieudits <- get_quick_etalab(insee_codes, "lieux_dits")
+  lieudits <- tryCatch(
+    get_quick_etalab(insee_codes, "lieux_dits"),
+    error = function(e) {
+      return(NULL)
+    }
+  )
+  if (is.null(lieudits)) {
+    return(NULL)
+  }
 
   # Ensure returned objects are sf
   if (!inherits(parcelles, "sf") || !inherits(lieudits, "sf")) {

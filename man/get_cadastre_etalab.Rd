@@ -9,6 +9,8 @@ get_cadastre_etalab(
   data = NULL,
   extract_dir = NULL,
   overwrite = TRUE,
+  verbose = FALSE,
+  warn = TRUE,
   ...
 )
 }
@@ -24,7 +26,13 @@ If \code{NULL}, all available datasets for the INSEE code are retrieved.}
 directory path where downloaded files are extracted.
 If \code{NULL}, a temporary unique directory is created automatically.}
 
-\item{overwrite}{Logical. Whether to overwrite existing downloaded files. Default is \code{TRUE}.}
+\item{overwrite}{\code{logical}.
+Whether to overwrite existing downloaded files. Default is \code{TRUE}.}
+
+\item{warn}{\code{logical}. Default is \code{TRUE}.
+If \code{TRUE}, warnings about missing URLs, failed downloads,
+missing GeoJSON files, or failed reads will be displayed. If FALSE, these warnings are suppressed
+and the function will return NULL silently when issues occur.}
 
 \item{...}{Additional arguments passed to \code{etalab_get_data_urls()}.}
 }

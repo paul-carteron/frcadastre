@@ -1,9 +1,13 @@
 library(shiny)
 library(leaflet)
-library(rcadastre)
 library(sf)
 library(openxlsx)
 library(DT)
+
+if (!requireNamespace("rcadastre", quietly = TRUE)) {
+  remotes::install_github("mucau5/rcadastre")
+}
+library(rcadastre)
 
 # ui ----
 ui <- fluidPage(

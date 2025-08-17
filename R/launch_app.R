@@ -8,7 +8,7 @@
 #'
 #' @export
 launch_app <- function() {
-  app_dir <- system.file("shiny/app", package = "rcadastre")
+  app_dir <- system.file("shiny/app/app.R", package = "rcadastre")
   if (app_dir == "") stop("App not found. Please re-install `rcadastre`.", call. = FALSE)
   shiny::runApp(app_dir, display.mode = "normal")
 }

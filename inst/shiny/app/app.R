@@ -3,7 +3,7 @@ library(leaflet)
 library(sf)
 library(openxlsx)
 library(DT)
-
+library(remotes)
 if (!requireNamespace("rcadastre", quietly = TRUE)) {
   remotes::install_github("mucau/rcadastre")
 }

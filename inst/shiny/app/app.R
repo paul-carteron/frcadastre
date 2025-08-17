@@ -5,7 +5,7 @@ library(openxlsx)
 library(DT)
 
 if (!requireNamespace("rcadastre", quietly = TRUE)) {
-  remotes::install_github("mucau5/rcadastre")
+  remotes::install_github("mucau/rcadastre")
 }
 library(rcadastre)
 

@@ -15,11 +15,11 @@
 #' If `NULL`, a temporary unique directory is created automatically.
 #' @param overwrite `logical`.
 #' Whether to overwrite existing downloaded files. Default is `TRUE`.
-#' @param ... Additional arguments passed to `etalab_get_data_urls()`.
 #' @param warn `logical`. Default is `TRUE`.
 #' If `TRUE`, warnings about missing URLs, failed downloads,
 #' missing GeoJSON files, or failed reads will be displayed. If FALSE, these warnings are suppressed
 #' and the function will return NULL silently when issues occur.
+#' @param ... Additional arguments passed to `etalab_get_data_urls()`.
 #'
 #' @return A named list of `sf` objects containing the downloaded and read spatial data.
 #'   Each list element corresponds to a dataset (e.g., `"parcelle"`, `"numvoie"`), aggregated
@@ -107,53 +107,4 @@ get_cadastre_etalab <- function(insee_code,
   )
 
   return(sf_data)
-}
-
-#' Download and return a specific cadastre layer from Etalab
-#'
-#' Retrieves cadastral data for one or more INSEE codes from Etalab,
-#' optionally specifying the type of data layer (e.g., "parcelles" or "lieudit").
-#'
-#' @param insee_code `character` or `numeric`.
-#' Vector of INSEE codes for the communes to download.
-#' @param data `character`.
-#' Name of the data layer to retrieve. Default is `"parcelles"`.
-#' @param extract_dir `character` or `NULL`.
-#' Directory to extract downloaded files. If `NULL`, a temporary directory is used.
-#' @param overwrite `logical`.
-#' Should existing files be overwritten? Default is `TRUE`.
-#' @param ... Additional arguments passed to `get_cadastre_etalab()`.
-#' @param warn `logical`. Default is `TRUE`.
-#' If `TRUE`, warnings about missing layers in the downloaded data
-#' will be displayed. If FALSE, these warnings are suppressed and the function returns `NULL` silently.
-#'
-#' @return `sf` object. The requested cadastral layer with unique features.
-#'
-#' @importFrom sf st_drop_geometry
-#'
-#' @seealso \code{\link{get_cadastre_etalab}}
-#'
-#' @export
-#'
-get_quick_etalab <- function(insee_code, data = "parcelles", extract_dir = NULL,
-                             overwrite = TRUE, warn = TRUE, ...) {
-
-  unique_insee <- unique(as.character(insee_code))
-  data_list <- rep(list(data), length(unique_insee))
-
-  sf_data <- get_cadastre_etalab(
-    insee_code = unique_insee,
-    data = data_list,
-    extract_dir = extract_dir,
-    overwrite = overwrite,
-    warn = FALSE,
-    ...
-  )
-
-  if (is.null(sf_data) || !data %in% names(sf_data)) {
-    if (warn) warning(sprintf("Data '%s' not found in 'etalab' query.", data))
-    return(NULL)
-  }
-
-  return(unique(sf_data[[data]]))
 }

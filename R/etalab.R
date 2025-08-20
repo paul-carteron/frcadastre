@@ -142,7 +142,7 @@ etalab_get_data_urls <- function(insee_code,     # vecteur de codes INSEE
                                  data = NULL,     # liste nommée ou non nommée : données par code INSEE, ou NULL = toutes données
                                  ...) {
 
-  # Si data est NULL → toutes les données pour tous les codes INSEE
+  # If 'data' is NULL → all availables datas has return for all 'insee_code'
   if (is.null(data)) {
     res_list <- lapply(insee_code, function(code) {
       scale <- cdg_detect_insee_code(code, T, F)
@@ -159,15 +159,13 @@ etalab_get_data_urls <- function(insee_code,     # vecteur de codes INSEE
     })
 
   } else {
-    # data doit être une liste
     if (!is.list(data)) {
-      stop("'data' doit être une liste nommée ou non nommée.")
+      stop("'data' must be a list, named or not.")
     }
 
     if (is.null(names(data))) {
-      # data non nommée → on suppose que longueur(data) == longueur(insee_code)
       if (length(data) != length(insee_code)) {
-        stop("Si 'data' n'a pas de noms, sa longueur doit être égale à celle de 'insee_code'.")
+        stop("'data' must have same length that 'insee_code'")
       }
 
       res_list <- mapply(function(code, datas) {
@@ -188,10 +186,9 @@ etalab_get_data_urls <- function(insee_code,     # vecteur de codes INSEE
       }, insee_code, data, SIMPLIFY = FALSE)
 
     } else {
-      # data nommée → vérifier que toutes les clés sont dans insee_code
       data_names <- names(data)
       if (!all(data_names %in% insee_code)) {
-        stop("Certaines clés dans 'data' ne sont pas dans le vecteur 'insee_code'.")
+        stop("Some keys in 'data' are not found for 'insee_code'.")
       }
 
       res_list <- lapply(insee_code, function(code) {

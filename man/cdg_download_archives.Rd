@@ -7,12 +7,9 @@
 cdg_download_archives(
   urls,
   destfiles = NULL,
-  extract = FALSE,
   extract_dir = NULL,
-  overwrite = FALSE,
   use_subdirs = FALSE,
-  verbose = FALSE,
-  warn = TRUE
+  ...
 )
 }
 \arguments{
@@ -21,24 +18,19 @@ cdg_download_archives(
 \item{destfiles}{\code{character}. Optional vector of file paths to save the downloaded files.
 If \code{NULL}, temporary files are created. Must have the same length as \code{urls}.}
 
-\item{extract}{\code{logical}. Default is \code{FALSE}. Whether to extract the archives after downloading.}
-
 \item{extract_dir}{\code{character}. Directory where archives will be extracted.
-If \code{NULL}, a temporary directory is created for this call.}
+If \code{NULL}, a temporary directory is created.}
 
-\item{overwrite}{\code{logical}. Default is \code{FALSE}. Whether to overwrite existing downloaded files.}
+\item{use_subdirs}{\code{logical}. Default \code{FALSE}. If \code{TRUE}, each archive is extracted into
+its own subdirectory within \code{extract_dir}.}
 
-\item{use_subdirs}{\code{logical}. Default is \code{FALSE}. If \code{TRUE}, each archive is extracted into
-its own subdirectory within \code{extract_dir}. Otherwise, all archives are extracted directly into \code{extract_dir}.}
-
-\item{verbose}{\code{logical}. Default is \code{FALSE}. Whether to display messages during download and extraction.}
+\item{...}{Additional arguments passed to \code{cdg_download_archive()}.}
 }
 \value{
-A list of extraction directories used for each archive. Length equals the number of \code{urls}.
+A list of extraction directories used for each archive.
 }
 \description{
-Downloads multiple archives from the given \code{urls}. Each archive can be
-extracted either into a unique subdirectory (one per archive) or into a common extraction directory.
+Downloads multiple archives from the given \code{urls}.
 }
 \seealso{
 \code{\link[=cdg_download_archive]{cdg_download_archive()}}

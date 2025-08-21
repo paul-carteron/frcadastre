@@ -7,22 +7,18 @@
 cdg_download_archive(
   url,
   destfile = NULL,
-  extract = FALSE,
   extract_dir = NULL,
   overwrite = FALSE,
-  verbose = TRUE,
-  warn = TRUE
+  verbose = TRUE
 )
 }
 \arguments{
 \item{url}{\code{character}. URL of the archive to download.}
 
 \item{destfile}{\code{character}. Optional path to save the downloaded file.
-If \code{NULL}, a temporary file with an appropriate extension is created.}
+If \code{NULL}, a temporary file with the same name as the archive is created.}
 
-\item{extract}{\code{logical}. Default is \code{FALSE}. Whether to extract the archive after download.}
-
-\item{extract_dir}{\code{character}. Directory where the archive will be extracted if \code{extract} is \code{TRUE}.
+\item{extract_dir}{\code{character}. Directory where the archive will be extracted.
 If \code{NULL}, a temporary directory is created.}
 
 \item{overwrite}{\code{logical}. Default is \code{FALSE}. Whether to overwrite the destination file if it already exists.}
@@ -30,16 +26,15 @@ If \code{NULL}, a temporary directory is created.}
 \item{verbose}{\code{logical}. Default is \code{TRUE}. Whether to display messages during download and extraction.}
 }
 \value{
-If \code{extract} is \code{TRUE}, returns the path to the extraction directory.
-Otherwise, returns a \code{list} with components:
-\item{file}{Path to the downloaded file.}
-\item{contents}{Metadata about the archive contents (as returned by \code{archive::archive}).}
+If the download and extraction succeed, returns the path to the extraction directory.
+Otherwise, returns \code{NULL}.
 }
 \description{
 Downloads a file from the specified \code{url} to a destination file.
-Optionally, the downloaded archive can be extracted to a given directory.
-The function also checks that the URL is reachable before downloading
-and allows controlling message output via the \code{verbose} parameter.
+The function first checks that the URL is reachable. If the download is successful,
+archives are automatically extracted based on their file extension (\code{.gz} or other formats
+supported by \code{archive::archive_extract}).
+Messages and warnings can be controlled via the \code{verbose} parameter.
 }
 \seealso{
 \code{\link[archive:archive_extract]{archive::archive_extract()}}, \code{\link[archive:archive]{archive::archive()}}

@@ -56,7 +56,8 @@ get_cadastre_etalab <- function(insee_code,
   .war <- function(...) if (isTRUE(verbose)) warning(...)
 
   # 1. Build URL table
-  urls_df <- etalab_get_data_urls(insee_code, data = data, ...)
+  urls_df <- etalab_get_data_urls(insee_code, data = data, ...) |>
+    etalab_filter_existing_urls()
 
   if (nrow(urls_df) == 0) {
     stop("No URL found for provided parameters.")
@@ -79,12 +80,10 @@ get_cadastre_etalab <- function(insee_code,
     cdg_download_archives(
       urls = urls_df$url,
       destfiles = urls_df$destfile,
-      extract = TRUE,
       extract_dir = extract_dir,
       overwrite = overwrite,
       use_subdirs = FALSE,
-      verbose = verbose,
-      warn = warn
+      verbose = verbose
     ),
     error = function(e) {
       .war("Download step failed: ", conditionMessage(e))

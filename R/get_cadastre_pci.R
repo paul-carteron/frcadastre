@@ -58,10 +58,11 @@ get_cadastre_pci <- function(communes,
   # 2. Télécharger et extraire TOUS les fichiers dans extract_dir
   download_results <- cdg_download_archives(
     urls = urls,
-    extract = TRUE,
+    destfiles = NULL,
     extract_dir = extract_dir,
     overwrite = overwrite,
-    use_subdirs = FALSE
+    use_subdirs = FALSE,
+    verbose = verbose
   )
   extraction_path <- download_results[[1]]
 

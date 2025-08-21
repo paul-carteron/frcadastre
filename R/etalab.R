@@ -138,18 +138,26 @@ etalab_get_data_url <- function(insee_code, data, ...){
 #'
 #' @export
 #'
-etalab_get_data_urls <- function(insee_code,     # vecteur de codes INSEE
-                                 data = NULL,     # liste nommée ou non nommée : données par code INSEE, ou NULL = toutes données
+etalab_get_data_urls <- function(insee_code,     # vector of INSEE codes
+                                 data = NULL,    # list (named or unnamed): datasets per INSEE code,
+                                 # or NULL = retrieve all datasets
                                  ...) {
 
-  # If 'data' is NULL → all availables datas has return for all 'insee_code'
+  # Case 1: if 'data' is NULL → return all available datasets for all given INSEE codes
   if (is.null(data)) {
     res_list <- lapply(insee_code, function(code) {
+      # Detect the type/scale of the INSEE code (commune, department, region, etc.)
       scale <- cdg_detect_insee_code(code, T, F)
+
+      # Get the list of available datasets for this scale
       all_data <- cfg_get_data(scale, TRUE)$data
+
+      # Build the URL for each dataset using 'etalab_get_data_url'
       urls <- vapply(all_data, function(d) {
         etalab_get_data_url(insee_code = code, data = d, ...)
       }, character(1))
+
+      # Return a dataframe with one row per dataset
       data.frame(
         insee_code = code,
         data = all_data,
@@ -159,24 +167,34 @@ etalab_get_data_urls <- function(insee_code,     # vecteur de codes INSEE
     })
 
   } else {
+    # Case 2: user provided 'data'
+
+    # Ensure that 'data' is indeed a list
     if (!is.list(data)) {
       stop("'data' must be a list, named or not.")
     }
 
+    # Case 2a: 'data' is an unnamed list
     if (is.null(names(data))) {
+      # Ensure that 'data' has the same length as 'insee_code'
       if (length(data) != length(insee_code)) {
         stop("'data' must have same length that 'insee_code'")
       }
 
+      # For each INSEE code and its corresponding data list
       res_list <- mapply(function(code, datas) {
+        # If no data specified → retrieve all available datasets
         if (is.null(datas)) {
           scale <- cdg_detect_insee_code(code, scale = TRUE)
           datas <- cfg_get_data(scale, TRUE)$data
         }
+
+        # Build URLs for each dataset
         urls <- vapply(datas, function(d) {
           etalab_get_data_url(insee_code = code, data = d, ...)
         }, character(1))
 
+        # Return a dataframe for this code
         data.frame(
           insee_code = code,
           data = datas,
@@ -186,22 +204,30 @@ etalab_get_data_urls <- function(insee_code,     # vecteur de codes INSEE
       }, insee_code, data, SIMPLIFY = FALSE)
 
     } else {
+      # Case 2b: 'data' is a named list (names = INSEE codes)
+
       data_names <- names(data)
+      # Ensure that all provided names exist in 'insee_code'
       if (!all(data_names %in% insee_code)) {
         stop("Some keys in 'data' are not found for 'insee_code'.")
       }
 
       res_list <- lapply(insee_code, function(code) {
+        # Get datasets associated with this INSEE code
         datas <- data[[as.character(code)]]
+
+        # If not specified, retrieve all available datasets
         if (is.null(datas)) {
           scale <- cdg_detect_insee_code(code, scale = TRUE)
           datas <- cfg_get_data(scale, TRUE)$data
         }
 
+        # Build URLs for each dataset
         urls <- vapply(datas, function(d) {
           etalab_get_data_url(insee_code = code, data = d, ...)
         }, character(1))
 
+        # Return dataframe for this code
         data.frame(
           insee_code = code,
           data = datas,
@@ -212,5 +238,63 @@ etalab_get_data_urls <- function(insee_code,     # vecteur de codes INSEE
     }
   }
 
+  # Combine all dataframes into a single dataframe
   do.call(rbind, res_list)
+}
+
+#' Filter and validate existing URLs in a data.frame
+#'
+#' This function checks if the URLs in a data.frame are accessible.
+#' Invalid or unreachable URLs are removed from the result.
+#' Optionally, warnings and messages are displayed if `verbose = TRUE`.
+#'
+#' @param df A `data.frame` with columns \code{insee_code}, \code{data}, and \code{url}.
+#' @param verbose Logical (default = TRUE). If TRUE, display warnings for removed URLs
+#'   and a message about how many were kept.
+#'
+#' @return A filtered `data.frame` containing only rows with valid and accessible URLs.
+#'
+#' @seealso [.url_exists] for the low-level URL existence check.
+#'
+#' @examples
+#' # Example data
+#' df <- data.frame(
+#'   insee_code = c("00001", "00002"),
+#'   data = c("example1", "example2"),
+#'   url = c("https://www.r-project.org", "https://nonexistent.example.com"),
+#'   stringsAsFactors = FALSE
+#' )
+#'
+#' # Filter valid URLs
+#' etalab_filter_existing_urls(df, verbose = TRUE)
+#'
+#' @export
+#'
+etalab_filter_existing_urls <- function(df, verbose = TRUE) {
+  # Check that input has the required structure
+  if (!all(c("insee_code", "data", "url") %in% names(df))) {
+    stop("The input must be a data.frame with columns 'insee_code', 'data' and 'url'.")
+  }
+
+  # Apply the URL test to all rows
+  exists_vec <- vapply(df$url, .url_exists, logical(1))
+
+  # If some URLs are invalid → show a warning only if verbose = TRUE
+  if (any(!exists_vec) && verbose) {
+    bad_urls <- df$url[!exists_vec]
+    warning(sprintf("%d URL(s) not accessible and removed:\n- %s",
+                    length(bad_urls),
+                    paste(bad_urls, collapse = "\n- ")),
+            call. = FALSE)
+  }
+
+  # Keep only the valid URLs
+  res <- df[exists_vec, , drop = FALSE]
+
+  # Inform the user if verbose = TRUE
+  if (verbose) {
+    message(sprintf("Kept %d / %d URLs.", nrow(res), nrow(df)))
+  }
+
+  return(res)
 }

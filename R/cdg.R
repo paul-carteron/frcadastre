@@ -275,215 +275,137 @@ cdg_choose_millesime <- function(site,
 #' Download and optionally extract an archive from a URL
 #'
 #' Downloads a file from the specified `url` to a destination file.
-#' Optionally, the downloaded archive can be extracted to a given directory.
-#' The function also checks that the URL is reachable before downloading
-#' and allows controlling message output via the `verbose` parameter.
+#' The function first checks that the URL is reachable. If the download is successful,
+#' archives are automatically extracted based on their file extension (`.gz` or other formats
+#' supported by `archive::archive_extract`).
+#' Messages and warnings can be controlled via the `verbose` parameter.
 #'
 #' @param url `character`. URL of the archive to download.
 #' @param destfile `character`. Optional path to save the downloaded file.
-#'   If `NULL`, a temporary file with an appropriate extension is created.
-#' @param extract `logical`. Default is `FALSE`. Whether to extract the archive after download.
-#' @param extract_dir `character`. Directory where the archive will be extracted if `extract` is `TRUE`.
+#'   If `NULL`, a temporary file with the same name as the archive is created.
+#' @param extract_dir `character`. Directory where the archive will be extracted.
 #'   If `NULL`, a temporary directory is created.
 #' @param overwrite `logical`. Default is `FALSE`. Whether to overwrite the destination file if it already exists.
 #' @param verbose `logical`. Default is `TRUE`. Whether to display messages during download and extraction.
 #'
-#' @return If `extract` is `TRUE`, returns the path to the extraction directory.
-#'   Otherwise, returns a `list` with components:
-#'   \item{file}{Path to the downloaded file.}
-#'   \item{contents}{Metadata about the archive contents (as returned by `archive::archive`).}
-#'
-#' @importFrom utils download.file
-#' @importFrom tools file_ext
-#' @importFrom httr HEAD status_code
+#' @return If the download and extraction succeed, returns the path to the extraction directory.
+#'   Otherwise, returns `NULL`.
 #'
 #' @seealso [archive::archive_extract()], [archive::archive()]
 #'
+#' @importFrom httr2 request req_perform req_method req_timeout
+#' @importFrom archive archive_extract
+#'
 #' @export
+#'
 cdg_download_archive <- function(url,
                                  destfile = NULL,
-                                 extract = FALSE,
                                  extract_dir = NULL,
                                  overwrite = FALSE,
-                                 verbose = TRUE,
-                                 warn = TRUE) {
+                                 verbose = TRUE) {
 
   .msg <- function(...) if (isTRUE(verbose)) message(...)
-  .war <- function(...) if (isTRUE(verbose)) warning(...)
+  .war <- function(...) if (isTRUE(verbose)) warning(..., call. = FALSE)
 
-  ok_url <- tryCatch({
-    resp_head <- httr2::request(url) |> httr2::req_method("HEAD") |> httr2::req_perform()
-    httr2::resp_status(resp_head) == 200
-  }, error = function(e) FALSE)
-
-  if (!ok_url) {
-    .war("The provided URL is not reachable or returned an error: ", url)
+  # Test existing url
+  if (!.url_exists(url)) {
+    .war(sprintf("URL not reachable: %s", url))
     return(NULL)
   }
 
-  ext <- tools::file_ext(url)
-  if (ext == "") {
-    .war("Unable to detect file extension; defaulting to '.zip'")
-    ext <- "zip"
-  }
+  if (is.null(destfile)) destfile <- tempfile(basename(url))
+  if (is.null(extract_dir)) extract_dir <- tempdir()
 
-  if (is.null(destfile)) {
-    destfile <- tempfile(fileext = paste0(".", ext))
-  }
-
-  if (file.exists(destfile) && !overwrite) {
-    .msg("File already exists: ", destfile)
-  } else {
-    .msg("Downloading from: ", url)
-    ok <- tryCatch({
+  # Download url
+  ok <- tryCatch({
+    if (!file.exists(destfile) || overwrite) {
       httr2::request(url) |> httr2::req_perform(path = destfile)
+    }
+    TRUE
+  }, error = function(e) {
+    .war(sprintf("Download failed: %s", conditionMessage(e)))
+    FALSE
+  })
+  if (!ok) return(NULL)
+
+  # Extraction according extent
+  filename <- basename(destfile)
+  ext <- tolower(sub(".*\\.([^.]+)$", "\\1", filename))
+  sub_extract_dir <- extract_dir
+
+  if (ext == "gz") {
+    out_file <- file.path(sub_extract_dir, sub("\\.gz$", "", filename))
+    ok <- tryCatch({
+      con_in <- gzfile(destfile, "rb")
+      con_out <- file(out_file, "wb")
+      while (length(buf <- readBin(con_in, what = raw(), n = 65536)) > 0) {
+        writeBin(buf, con_out)
+      }
+      close(con_in); close(con_out)
       TRUE
     }, error = function(e) {
-      .war("Download failed: ", conditionMessage(e))
+      .war(sprintf("Decompression failed: %s", conditionMessage(e)))
       FALSE
     })
-    if (!ok) return(NULL)
-    .msg("File downloaded to: ", destfile)
-  }
+    if (ok) .msg(sprintf("File '%s' downloaded and decompressed", filename))
 
-  if (extract) {
-    if (is.null(extract_dir)) {
-      extract_dir <- tempfile("extract_")
-      dir.create(extract_dir)
-    }
-
-    filename_from_url <- basename(sub("\\?.*$", "", url))
-
-    if (ext == "gz") {
-      out_file <- file.path(extract_dir, sub("\\.gz$", "", filename_from_url))
-      .msg("Decompressing gzip file to: ", out_file)
-      ok <- tryCatch({
-        con_in <- gzfile(destfile, "rb")
-        con_out <- file(out_file, "wb")
-        while(length(buf <- readBin(con_in, what = raw(), n = 65536)) > 0) {
-          writeBin(buf, con_out)
-        }
-        close(con_in)
-        close(con_out)
-        TRUE
-      }, error = function(e) {
-        .war("Decompression failed: ", conditionMessage(e))
-        FALSE
-      })
-      if (!ok) return(NULL)
-      .msg("File decompressed to: ", out_file)
-      return(extract_dir)
-
-    } else {
-      ok <- tryCatch({
-        archive::archive_extract(destfile, dir = extract_dir)
-        TRUE
-      }, error = function(e) {
-        .war("Extraction failed: ", conditionMessage(e))
-        FALSE
-      })
-      if (!ok) return(NULL)
-      .msg("Files extracted to: ", extract_dir)
-      return(extract_dir)
-    }
   } else {
-    info <- tryCatch({
-      archive::archive(destfile)
+    ok <- tryCatch({
+      archive::archive_extract(destfile, dir = sub_extract_dir)
+      TRUE
     }, error = function(e) {
-      .war("Archive inspection failed: ", conditionMessage(e))
-      NULL
+      .war(sprintf("Extraction failed: %s", conditionMessage(e)))
+      FALSE
     })
-    return(list(file = destfile, contents = info))
+    if (ok) .msg(sprintf("File '%s' downloaded and extracted", filename))
   }
+
+  if (ok) return(sub_extract_dir)
+  else return(NULL)
 }
 
 
 #' Download multiple archives and optionally extract them
 #'
-#' Downloads multiple archives from the given `urls`. Each archive can be
-#' extracted either into a unique subdirectory (one per archive) or into a common extraction directory.
+#' Downloads multiple archives from the given `urls`.
 #'
 #' @param urls `character`. Vector of URLs to download.
 #' @param destfiles `character`. Optional vector of file paths to save the downloaded files.
 #'   If `NULL`, temporary files are created. Must have the same length as `urls`.
-#' @param extract `logical`. Default is `FALSE`. Whether to extract the archives after downloading.
 #' @param extract_dir `character`. Directory where archives will be extracted.
-#'   If `NULL`, a temporary directory is created for this call.
-#' @param overwrite `logical`. Default is `FALSE`. Whether to overwrite existing downloaded files.
-#' @param use_subdirs `logical`. Default is `FALSE`. If `TRUE`, each archive is extracted into
-#'   its own subdirectory within `extract_dir`. Otherwise, all archives are extracted directly into `extract_dir`.
-#' @param verbose `logical`. Default is `FALSE`. Whether to display messages during download and extraction.
+#'   If `NULL`, a temporary directory is created.
+#' @param use_subdirs `logical`. Default `FALSE`. If `TRUE`, each archive is extracted into
+#'   its own subdirectory within `extract_dir`.
+#' @param ... Additional arguments passed to `cdg_download_archive()`.
 #'
-#' @return A list of extraction directories used for each archive. Length equals the number of `urls`.
+#' @return A list of extraction directories used for each archive.
 #'
 #' @seealso [cdg_download_archive()]
-#' @importFrom utils menu
+#'
 #' @export
+#'
 cdg_download_archives <- function(urls,
                                   destfiles = NULL,
-                                  extract = FALSE,
                                   extract_dir = NULL,
-                                  overwrite = FALSE,
                                   use_subdirs = FALSE,
-                                  verbose = FALSE,
-                                  warn = TRUE) {
-
-  .msg <- function(...) if (isTRUE(verbose)) message(...)
-  .war <- function(...) if (isTRUE(verbose)) warning(...)
-
-  n <- length(urls)  # Number of URLs to download
-
-  if (is.null(extract_dir)) {
-    extract_dir <- tempfile(pattern = "cdg_extract_")
-    dir.create(extract_dir, recursive = TRUE)
-  }
-
-  if (is.null(destfiles)) {
-    exts <- tools::file_ext(urls)
-    exts[exts == ""] <- "zip"
-    destfiles <- file.path(extract_dir, paste0("file_", seq_len(n), ".", exts))
-  }
-
-  if (length(destfiles) != n) {
-    stop("`destfiles` must have the same length as `urls`")
-  }
+                                  ...) {
+  n <- length(urls)
+  if (is.null(destfiles)) destfiles <- rep(NA_character_, n)
+  if (is.null(extract_dir)) extract_dir <- tempdir()
 
   results <- vector("list", n)
-
   for (i in seq_along(urls)) {
-    .msg(sprintf("\n--- [%d/%d] Downloading: %s", i, n, urls[i]))
+    sub_dir <- if (use_subdirs) file.path(extract_dir, paste0("archive_", i)) else extract_dir
+    if (use_subdirs && !dir.exists(sub_dir)) dir.create(sub_dir, recursive = TRUE)
 
-    sub_extract_dir <- if (use_subdirs) {
-      dir <- file.path(extract_dir, paste0("extract_", i))
-      if (!dir.exists(dir)) dir.create(dir, recursive = TRUE)
-      dir
-    } else extract_dir
-
-    res <- tryCatch({
-      cdg_download_archive(
-        url = urls[i],
-        destfile = destfiles[i],
-        extract = extract,
-        extract_dir = sub_extract_dir,
-        overwrite = overwrite,
-        verbose = verbose,
-        warn = warn  # <-- pass warn
-      )
-    }, error = function(e) {
-      .war(sprintf("Failed for URL %s: %s", urls[i], conditionMessage(e)))
-      NULL
-    })
-
-    if (is.null(res) && verbose) message("Skipping file ", urls[i])
-
-    results[[i]] <- res
+    results[[i]] <- cdg_download_archive(
+      url = urls[i],
+      destfile = if (!is.na(destfiles[i])) destfiles[i] else NULL,
+      extract_dir = sub_dir,
+      ...
+    )
   }
-
-  if (use_subdirs) {
-    return(lapply(seq_len(n), function(i) file.path(extract_dir, paste0("extract_", i))))
-  } else {
-    return(rep(list(extract_dir), n))
-  }
+  results
 }
 
 ### INSEE code section ----

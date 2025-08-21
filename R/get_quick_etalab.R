@@ -40,5 +40,5 @@ get_quick_etalab <- function(insee_code,
     return(NULL)
   }
 
-  return(unique(sf_data[[data]]))
+  return(sf_data)
 }

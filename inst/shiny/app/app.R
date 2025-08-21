@@ -3,6 +3,7 @@ library(leaflet)
 library(sf)
 library(openxlsx)
 library(DT)
+library(archive)
 library(remotes)
 if (!requireNamespace("rcadastre", quietly = TRUE)) {
   remotes::install_github("mucau/rcadastre")
@@ -70,8 +71,14 @@ ui <- fluidPage(
       ),
 
       # Contenance
-      h5("Contenance"),
-      verbatimTextOutput("contenance"),
+      fluidRow(
+        column(6,
+               h5("Landuse"),
+               textInput("landuse", label = NULL)),
+        column(6,
+               h5("Contenance"),
+               verbatimTextOutput("contenance"))
+      ),
 
       # Add button
       actionButton("add_parcelle", "Add selected plot")
@@ -121,6 +128,7 @@ server <- function(input, output, session) {
       section = character(0),
       numero = character(0),
       lieudit = character(0),
+      landuse = character(0),
       contenance = numeric(0),
       geometry = st_sfc(crs = 4326) # CRS EPSG:4326
     )
@@ -306,10 +314,11 @@ server <- function(input, output, session) {
   observeEvent(input$add_parcelle, {
     # Checks
     if (is.null(input$forest) || input$forest == "" ||
-        is.null(input$owner) || input$owner == "") {
+        is.null(input$owner) || input$owner == ""||
+        is.null(input$landuse) || input$landuse == "") {
 
       showNotification(
-        "You have to complete 'Forest' et 'Owner' before add plot.",
+        "You have to complete 'Forest', 'Owner' and 'Landuse' before add plot.",
         type = "error",
         duration = 5  # en secondes
       )
@@ -341,6 +350,7 @@ server <- function(input, output, session) {
       section = substr(input$section, 4, 5),
       numero = input$numero,
       lieudit = lieudit_value,
+      landuse = input$landuse,
       contenance = surface_rv(),
       geometry = st_geometry(parcelle)
     )
@@ -401,7 +411,7 @@ server <- function(input, output, session) {
     }
   })
 
-  # Export
+  # Export UI
   output$export_ui <- renderUI({
     req(parcelles_sf())
     if (nrow(parcelles_sf()) > 0) {
@@ -409,47 +419,63 @@ server <- function(input, output, session) {
         h4("Exports"),
         column(
           width = 12,
-          # Aligner les inputs horizontalement
           div(style = "display: flex; align-items: center; gap: 10px;",
               radioButtons("data_type", "Type d'export",
                            choices = c("dataframe" = "df", "sf" = "sf"),
                            inline = TRUE),
               uiOutput("format_ui"),
-              actionButton("export_btn", "Exporter")
+              downloadButton("export_btn", "Exporter")
           )
         )
       )
     }
   })
 
-  observeEvent(input$export_btn, {
-    df <- parcelles_sf()
-    file_path <- NULL
+  # Serveur
+  output$export_btn <- downloadHandler(
+    filename = function() {
+      df <- parcelles_sf()
+      ext <- switch(input$format,
+                    "csv" = "csv",
+                    "xlsx" = "xlsx",
+                    "shp" = "zip",      # Pour shapefile on zip
+                    "geojson" = "geojson")
+      paste0("parcelles.", ext)
+    },
+    content = function(file) {
+      df <- parcelles_sf()
 
-    if (input$data_type == "df") {
-      if (input$format == "csv") {
-        file_path <- "parcelles.csv"
-        write.csv(df, file_path, row.names = FALSE)
-      } else if (input$format == "xlsx") {
-        file_path <- "parcelles.xlsx"
-        openxlsx2::write_xlsx(df, file_path)
+      if (input$data_type == "df") {
+        if (input$format == "csv") {
+          write.csv(df, file, row.names = FALSE)
+        } else if (input$format == "xlsx") {
+          openxlsx2::write_xlsx(df, file)
+        }
+      } else if (input$data_type == "sf") {
+        if (input$format == "geojson") {
+          sf::st_write(df, file, delete_dsn = TRUE)
+        } else if (input$format == "shp") {
+          # Shapefile → plusieurs fichiers à zipper
+          tmp_dir <- tempdir()
+          shp_path <- file.path(tmp_dir, "parcelles.shp")
+          sf::st_write(df, shp_path, delete_dsn = TRUE)
+
+          # Récupérer tous les fichiers shapefile
+          shp_files <- list.files(tmp_dir, pattern = "parcelles\\..*$", full.names = TRUE)
+
+          # Créer le zip avec archive
+          archive::archive_write(file, shp_files, format = "zip")
+        }
       }
-    } else if (input$data_type == "sf") {
-      if (input$format == "shp") {
-        file_path <- "parcelles.shp"
-        st_write(df, file_path, delete_dsn = TRUE)
-      } else if (input$format == "geojson") {
-        file_path <- "parcelles.geojson"
-        st_write(df, file_path, delete_dsn = TRUE)
-      }
+
+      # Notification
+      showNotification(
+        paste0("Export prêt : ", file),
+        type = "message",
+        duration = 5
+      )
     }
-
-    showNotification(
-      paste0("Export done ! File written in : ", normalizePath(file_path)),
-      type = "message",
-      duration = 5
-    )
-  })
+  )
 
 }
 

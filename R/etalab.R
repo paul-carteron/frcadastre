@@ -249,8 +249,8 @@ etalab_get_data_urls <- function(insee_code,     # vector of INSEE codes
 #' Optionally, warnings and messages are displayed if `verbose = TRUE`.
 #'
 #' @param df A `data.frame` with columns \code{insee_code}, \code{data}, and \code{url}.
-#' @param verbose Logical (default = TRUE). If TRUE, display warnings for removed URLs
-#'   and a message about how many were kept.
+#' @param verbose Logical (default = `TRUE`).
+#' If `TRUE`, display warnings for removed URLs and a message about how many were kept.
 #'
 #' @return A filtered `data.frame` containing only rows with valid and accessible URLs.
 #'

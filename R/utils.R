@@ -30,3 +30,34 @@
   )
   ok
 }
+
+#' Read a GeoJSON file (optionally gzipped) and extract a clean name
+#'
+#' Reads a GeoJSON file and returns a list with a simplified name and the spatial data.
+#' Automatically decompresses gzipped files if needed.
+#'
+#' @param f `character`. Path to the GeoJSON or gzipped GeoJSON file.
+#' @return A list with components:
+#'   \item{name}{Simplified name extracted from the file name.}
+#'   \item{data}{`sf` object with the spatial data.}
+#'
+#' @noRd
+#'
+.read_geojson_file <- function(f) {
+  # Raw name without extensions
+  name <- basename(f)
+  name <- sub("\\.gz$", "", name, ignore.case = TRUE)
+  name <- sub("\\.(geojson|json)$", "", name, ignore.case = TRUE)
+
+  # Keep only what comes after the last "-"
+  name <- sub(".*-", "", name)
+
+  # If gzipped -> decompress to a temporary file
+  if (grepl("\\.gz$", f, ignore.case = TRUE)) {
+    tmp <- tempfile(fileext = ".geojson")
+    R.utils::gunzip(f, destname = tmp, remove = FALSE, overwrite = TRUE)
+    f <- tmp
+  }
+
+  list(name = name, data = sf::st_read(f, quiet = TRUE))
+}

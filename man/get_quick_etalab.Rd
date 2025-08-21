@@ -4,7 +4,7 @@
 \alias{get_quick_etalab}
 \title{Download and return a specific cadastre layer from Etalab}
 \usage{
-get_quick_etalab(insee_code, data = "parcelles", ...)
+get_quick_etalab(insee_code, data = "parcelles", verbose = TRUE, ...)
 }
 \arguments{
 \item{insee_code}{\code{character} or \code{numeric}.
@@ -13,6 +13,10 @@ Vector of INSEE codes for the communes to download.}
 \item{data}{\code{character}.
 Name of the data layer to retrieve. Default is \code{"parcelles"}.
 See available data with \code{\link{cfg_get_data}}}
+
+\item{verbose}{\code{logical} (default: \code{FALSE})
+If \code{TRUE}, warnings about missing URLs, or failed downloads are displayed.
+If \code{FALSE}, the function fails silently and returns \code{NULL} when issues occur.}
 
 \item{...}{Additional arguments passed to \code{get_cadastre_etalab()}.}
 }

@@ -165,49 +165,48 @@ read_edigeo <- function(edigeo_dir) {
 #' @export
 #'
 read_geojson <- function(path) {
-  read_file <- function(f) {
-    # Nom brut sans extensions
-    name <- basename(f)
-    name <- sub("\\.gz$", "", name, ignore.case = TRUE)
-    name <- sub("\\.(geojson|json)$", "", name, ignore.case = TRUE)
-
-    # On garde uniquement ce qui est après le dernier "-"
-    name <- sub(".*-", "", name)
-
-    # Si gz -> décompresse dans un temporaire
-    if (grepl("\\.gz$", f, ignore.case = TRUE)) {
-      tmp <- tempfile(fileext = ".geojson")
-      R.utils::gunzip(f, destname = tmp, remove = FALSE, overwrite = TRUE)
-      f <- tmp
-    }
-
-    list(name = name, data = sf::st_read(f, quiet = TRUE))
-  }
-
-  # Liste des fichiers
+  # List files: if 'path' is a single file, use it; otherwise, list all GeoJSON/JSON (and optional .gz) files in the directory
   if (file.exists(path) && !dir.exists(path)) {
     files <- path
   } else {
-    files <- list.files(path, pattern = "\\.(geojson|json)(\\.gz)?$",
-                        full.names = TRUE, ignore.case = TRUE)
+    files <- list.files(
+      path,
+      pattern = "\\.(geojson|json)(\\.gz)?$",
+      full.names = TRUE,
+      ignore.case = TRUE
+    )
   }
+
+  # Stop if no files are found
   if (length(files) == 0) stop("No GeoJSON files found in ", path)
 
-  # Lecture et extraction nom + données
-  file_data <- lapply(files, read_file)
-  names_list <- sapply(file_data, `[[`, "name")
-  sf_list <- lapply(file_data, `[[`, "data")
+  # Read each file and extract name + data
+  file_data <- lapply(files, .read_geojson_file)
+  names_list <- sapply(file_data, `[[`, "name")  # Extract the cleaned layer names
+  sf_list <- lapply(file_data, `[[`, "data")    # Extract the sf objects
 
-  # Agrégation par nom
+  # Aggregate layers by name
   aggregated <- lapply(unique(names_list), function(n) {
-    idx <- which(names_list == n)
+    idx <- which(names_list == n)  # Index of all layers with the same name
     if (length(idx) == 1) {
+      # Only one file with this name, return as is
       sf_list[[idx]]
     } else {
-      do.call(rbind, sf_list[idx])
+      # Multiple files with the same name: unify columns before binding
+      all_cols <- unique(unlist(lapply(sf_list[idx], names)))  # All unique column names across layers
+      sf_list_fixed <- lapply(sf_list[idx], function(x) {
+        # Add missing columns filled with NA
+        missing_cols <- setdiff(all_cols, names(x))
+        for (col in missing_cols) x[[col]] <- NA
+        x[all_cols]  # Reorder columns consistently
+      })
+      # Combine all sf objects into a single sf object
+      do.call(rbind, sf_list_fixed)
     }
   })
+
+  # Assign layer names to the aggregated list
   names(aggregated) <- unique(names_list)
 
-  aggregated
+  aggregated  # Return a named list of sf objects
 }

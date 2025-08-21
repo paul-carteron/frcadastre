@@ -8,6 +8,9 @@
 #' @param data `character`.
 #' Name of the data layer to retrieve. Default is `"parcelles"`.
 #' See available data with \code{\link{cfg_get_data}}
+#' @param verbose `logical` (default: `FALSE`)
+#' If `TRUE`, warnings about missing URLs, or failed downloads are displayed.
+#' If `FALSE`, the function fails silently and returns `NULL` when issues occur.
 #' @param ... Additional arguments passed to `get_cadastre_etalab()`.
 #'
 #' @return `sf` object. The requested cadastral layer with unique features.
@@ -20,6 +23,7 @@
 #'
 get_quick_etalab <- function(insee_code,
                              data = "parcelles",
+                             verbose = TRUE,
                              ...) {
 
   unique_insee <- unique(as.character(insee_code))
@@ -28,11 +32,11 @@ get_quick_etalab <- function(insee_code,
   sf_data <- get_cadastre_etalab(
     insee_code = unique_insee,
     data = data_list,
+    verbose = verbose,
     ...
   )
 
-  if (is.null(sf_data) || !data %in% names(sf_data)) {
-    warning(sprintf("Data '%s' not found in 'etalab' query.", data))
+  if (is.null(sf_data)) {
     return(NULL)
   }
 

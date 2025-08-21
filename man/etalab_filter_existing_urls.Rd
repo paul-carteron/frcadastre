@@ -9,8 +9,8 @@ etalab_filter_existing_urls(df, verbose = TRUE)
 \arguments{
 \item{df}{A \code{data.frame} with columns \code{insee_code}, \code{data}, and \code{url}.}
 
-\item{verbose}{Logical (default = TRUE). If TRUE, display warnings for removed URLs
-and a message about how many were kept.}
+\item{verbose}{Logical (default = \code{TRUE}).
+If \code{TRUE}, display warnings for removed URLs and a message about how many were kept.}
 }
 \value{
 A filtered \code{data.frame} containing only rows with valid and accessible URLs.

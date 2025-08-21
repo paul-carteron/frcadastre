@@ -2,69 +2,81 @@
 % Please edit documentation in R/get_cadastre_etalab.R
 \name{get_cadastre_etalab}
 \alias{get_cadastre_etalab}
-\title{Download and read cadastre data from Etalab for a given INSEE code}
+\title{This function retrieves URLs for cadastre datasets from Etalab based on a
+given INSEE code and optional dataset filters. It downloads and extracts
+the data into a specified directory, then reads all extracted GeoJSON files
+as \code{sf} objects. When multiple files correspond to the same dataset,
+their contents are aggregated into a single \code{sf} object with harmonized
+columns. The result is returned as a named list of \code{sf} objects.}
 \usage{
 get_cadastre_etalab(
   insee_code,
   data = NULL,
   extract_dir = NULL,
   overwrite = TRUE,
-  verbose = FALSE,
-  warn = TRUE,
+  verbose = TRUE,
   ...
 )
 }
 \arguments{
 \item{insee_code}{\code{character}
-the INSEE code for the commune or area to download data for.}
+The INSEE code for the commune or administrative unit to download cadastre data for.}
 
-\item{data}{\code{character} (vector or \code{NULL})
-specific datasets to download (e.g., \code{"parcelle"}, \code{"numvoie"}).
-If \code{NULL}, all available datasets for the INSEE code are retrieved.}
+\item{data}{\code{character} (vector) or \code{NULL}
+Specific datasets to download (e.g., \code{"parcelle"}, \code{"numvoie"}).
+If \code{NULL}, all datasets available for the given INSEE code are retrieved.}
 
 \item{extract_dir}{\code{character} or \code{NULL}
-directory path where downloaded files are extracted.
-If \code{NULL}, a temporary unique directory is created automatically.}
+Path to the directory where downloaded files should be extracted.
+If \code{NULL}, a unique temporary directory is created automatically.}
 
-\item{overwrite}{\code{logical}.
-Whether to overwrite existing downloaded files. Default is \code{TRUE}.}
+\item{overwrite}{\code{logical} (default: \code{TRUE})
+Whether to overwrite existing files in \code{extract_dir}.}
 
-\item{warn}{\code{logical}. Default is \code{TRUE}.
-If \code{TRUE}, warnings about missing URLs, failed downloads,
-missing GeoJSON files, or failed reads will be displayed. If FALSE, these warnings are suppressed
-and the function will return NULL silently when issues occur.}
+\item{verbose}{\code{logical} (default: \code{FALSE})
+If \code{TRUE}, warnings about missing URLs, or failed downloads are displayed.
+If \code{FALSE}, the function fails silently and returns \code{NULL} when issues occur.}
 
-\item{...}{Additional arguments passed to \code{etalab_get_data_urls()}.}
+\item{...}{Additional arguments passed to \code{\link[=etalab_get_data_urls]{etalab_get_data_urls()}}.}
 }
 \value{
-A named list of \code{sf} objects containing the downloaded and read spatial data.
-Each list element corresponds to a dataset (e.g., \code{"parcelle"}, \code{"numvoie"}), aggregated
-from one or more GeoJSON files.
+A named list of \code{sf} objects containing the downloaded and read cadastre datasets.
+Each list element corresponds to a dataset (e.g., \code{"parcelle"}, \code{"numvoie"}).
+If multiple files correspond to the same dataset, they are combined and returned
+as a single \code{sf} object with unified columns.
 }
 \description{
-This function retrieves URLs for cadastre datasets from Etalab based on the
-provided INSEE code and optional data types, downloads and extracts the files
-into a specified directory, then reads all extracted GeoJSON files as \code{sf}
-objects. The data are aggregated and returned as a named list of \code{sf} objects.
+This function retrieves URLs for cadastre datasets from Etalab based on a
+given INSEE code and optional dataset filters. It downloads and extracts
+the data into a specified directory, then reads all extracted GeoJSON files
+as \code{sf} objects. When multiple files correspond to the same dataset,
+their contents are aggregated into a single \code{sf} object with harmonized
+columns. The result is returned as a named list of \code{sf} objects.
 }
 \details{
-The function performs the following steps:
+The function follows these steps:
 \enumerate{
-\item Retrieve download URLs from Etalab using \code{etalab_get_data_urls()}.
-\item Download and extract all requested files into \code{extract_dir}.
-\item Read all extracted GeoJSON files using \code{read_geojson()}, which aggregates data by dataset name.
+\item Retrieve the list of download URLs from Etalab using \code{\link[=etalab_get_data_urls]{etalab_get_data_urls()}}.
+\item Download and extract the files into \code{extract_dir} using \code{\link[=cdg_download_archives]{cdg_download_archives()}}.
+\item Read all extracted GeoJSON files with \code{\link[=read_geojson]{read_geojson()}}, which aggregates them
+by dataset name and ensures consistent column structure across files.
 }
 
-The \code{extract_dir} is created as a unique temporary directory if not provided,
-ensuring that multiple calls do not interfere with each other's files.
+If \code{extract_dir} is not provided, a unique temporary directory is created
+(\code{tempfile(pattern = "cadastre_extract_")}). This prevents conflicts
+between multiple calls and keeps downloaded data isolated.
 }
 \examples{
 \dontrun{
 # Download and read all cadastre datasets for INSEE code 72188
 cadastre_data <- get_cadastre_etalab("72188")
 
-# Download only parcelle and numvoie data, specifying an extraction directory
-cadastre_data <- get_cadastre_etalab("72188", data = c("parcelle", "numvoie"), extract_dir = "data/cadastre")
+# Download only parcelle and numvoie datasets, with a fixed extraction directory
+cadastre_data <- get_cadastre_etalab(
+  "72188",
+  data = c("parcelle", "numvoie"),
+  extract_dir = "data/cadastre"
+)
 }
 
 }

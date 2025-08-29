@@ -19,7 +19,7 @@ Imports:
     httr2,
     leaflet,
     openxlsx2,
-    shiny)
+    shiny
 Depends: 
     R (>= 4.1.0)
 LazyData: true

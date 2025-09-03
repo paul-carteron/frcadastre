@@ -26,7 +26,7 @@ cfg_get_config_path <- function(cfg_name = NULL, must_exist = TRUE) {
 
   config_path <- file.path(config_dir, cfg_name)
   if (must_exist && !file.exists(config_path)) {
-    stop(sprintf("File ‘%s’ not found in ‘inst/config/’.", cfg_name), call. = FALSE)
+    stop(sprintf("File '%s' not found in 'inst/config/'.", cfg_name), call. = FALSE)
   }
 
   return(config_path)
@@ -66,7 +66,7 @@ cdg_get_path <- function(site,
     return(file.path(config$cdg$path, config$cdg[[site]]$path))
   }
 
-  stop(sprintf("Unknown site: ‘%s’", site), call. = FALSE)
+  stop(sprintf("Unknown site: '%s'", site), call. = FALSE)
 }
 
 #' Get the configuration for a site, format, scale, and optional data
@@ -99,24 +99,24 @@ cfg_get_prefix_extent <- function(site,
                                   config = cfg_load("cdg_structure.yaml")) {
   cdg_cfg <- config$cdg
   if (!site %in% names(cdg_cfg))
-    stop(sprintf("Unknown site: ‘%s’", site), call. = FALSE)
+    stop(sprintf("Unknown site: '%s'", site), call. = FALSE)
 
   site_cfg <- cdg_cfg[[site]]
   if (!"formats" %in% names(site_cfg))
-    stop(sprintf("No 'formats' for the site ‘%s’", site), call. = FALSE)
+    stop(sprintf("No 'formats' for the site '%s'", site), call. = FALSE)
 
   formats_list <- site_cfg$formats
   if (!format %in% names(formats_list))
-    stop(sprintf("Format ‘%s’ not available for the site ‘%s’", format, site), call. = FALSE)
+    stop(sprintf("Format '%s' not available for the site '%s'", format, site), call. = FALSE)
 
   format_cfg <- formats_list[[format]]
   if (!scale %in% names(format_cfg))
-    stop(sprintf("Scale ‘%s’ not available for the site/format ‘%s’/‘%s’", scale, site, format), call. = FALSE)
+    stop(sprintf("Scale '%s' not available for the site/format '%s'/'%s'", scale, site, format), call. = FALSE)
 
   data_cfg <- format_cfg[[scale]]
   if (!is.null(data)){
     if (!data %in% names(data_cfg))
-      stop(sprintf("Data ‘%s’ not available for the site/format/scale ‘%s’/‘%s’", data, site, format, scale), call. = FALSE)
+      stop(sprintf("Data '%s' not available for the site/format/scale '%s'/'%s'", data, site, format, scale), call. = FALSE)
     res_cfg <- data_cfg[[data]]
   } else {
     return(data_cfg)
@@ -148,13 +148,13 @@ cfg_get_data <- function(scale = c("departements", "communes"),
   scale <- match.arg(scale)
 
   geojson <- config$cdg$etalab$formats$geojson[[scale]]
-  if (is.null(geojson)) stop(sprintf("Scale ‘%s’ not found in config", scale), call. = FALSE)
+  if (is.null(geojson)) stop(sprintf("Scale '%s' not found in config", scale), call. = FALSE)
 
   raw <- geojson$raw$data
   proc <- geojson$proc$data
 
   if (is.null(raw) || is.null(proc)) {
-    stop(sprintf("Data ‘raw’ or ‘proc’ not found in config for scale ‘%s’", scale), call. = FALSE)
+    stop(sprintf("Data 'raw' or 'proc' not found in config for scale '%s'", scale), call. = FALSE)
   }
 
   if (as_df) {

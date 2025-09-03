@@ -214,8 +214,8 @@ cdg_detect_millesimes <- function(site,
 #' String specifying the data site. Passed to \code{\link{cdg_detect_millesimes}}.
 #' @param millesime `character`.
 #' Specifying the desired millesime:
-#'   - `NULL` → returns `"latest"`.
-#'   - `"?"` → opens an interactive menu to choose from available millesimes.
+#'   - `NULL` returns `"latest"`.
+#'   - `"?"` opens an interactive menu to choose from available millesimes.
 #'   - otherwise, checks if the provided millesime exists.
 #' @param ... Additional arguments passed to \code{\link{cdg_detect_millesimes}}.
 #'
@@ -411,7 +411,7 @@ cdg_download_archives <- function(urls,
 ### INSEE code section ----
 #' Detect and validate INSEE code (city or department)
 #'
-#' Checks if the provided INSEE code is valid among communes or départements,
+#' Checks if the provided INSEE code is valid among communes or departements,
 #' optionally returning the scale ("communes" or "departements").
 #'
 #' @param insee_code `character` or `numeric`.
@@ -446,7 +446,7 @@ cdg_detect_insee_code <- function(insee_code, scale = FALSE, verbose = TRUE) {
       stop(sprintf("Erreur : department '%s' not find. Please run Rsequoia2::departement_2025",
                    insee_code))
     } else {
-      if (verbose){message(sprintf("Départment '%s' = '%s' selected",
+      if (verbose){message(sprintf("Department '%s' = '%s' selected",
                                    insee_code,
                                    departements[departements$DEP == insee_code, "LIBELLE"]))}
       if (scale){scale_detected <- "departements"}

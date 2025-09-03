@@ -26,7 +26,7 @@ An interactive Shiny app is also included for users who prefer a graphical inter
 
 # Installation
 
-```{r installation}
+```{r installation, eval = FALSE}
 # From CRAN (once published)
 install.packages("rcadastre")
 
@@ -48,7 +48,7 @@ Administrative boundaries: included datasets for `commune_2025`, `departement_20
 
 ## Example workflow
 
-```{r main_example}
+```{r main_example, eval = FALSE}
 library(rcadastre)
 
 # Load example dataset
@@ -76,7 +76,7 @@ Configuration utilities: manage paths and metadata
 
 An interactive Shiny app is bundled within the package. You can launch it with:
 
-```{r app}
+```{r app, eval = FALSE}
 rcadastre::launch_app()
 ```
 

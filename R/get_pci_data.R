@@ -50,16 +50,16 @@ get_pci_data <- function(insee_code,
 
   format <- match.arg(format)
 
-  # 1. Récupérer les URLs
+  # 1. Get all URLs
   urls_df <- pci_get_feuille_urls(insee_code, feuilles = feuilles, format = format, ...)
 
   if (nrow(urls_df) == 0) {
-    stop("Aucune URL trouvée pour les paramètres fournis.")
+    stop(sprintf("No urls found with arguments: %s, %s, %s", insee_code, feuilles, format))
   }
 
   urls <- urls_df$url
 
-  # 2. Télécharger et extraire TOUS les fichiers dans extract_dir
+  # 2. Download and extract all files in extract_dir
   download_results <- cdg_download_archives(
     urls = urls,
     destfiles = NULL,
@@ -70,7 +70,7 @@ get_pci_data <- function(insee_code,
   )
   extraction_path <- download_results[[1]]
 
-  # 3. Lire tous les fichiers extraits dans extract_dir
+  # 3. Read all extrated files in extract_dir
   sf_data <- switch(format,
                     dxf = read_dxf(extraction_path),
                     edigeo = read_edigeo(extraction_path))

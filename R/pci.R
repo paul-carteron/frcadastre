@@ -1,7 +1,7 @@
 ### URL section ----
 #' Construct a PCI data download URL
 #'
-#' Constructs a URL for downloading PCI (Plan Cadastral Informatisé) data
+#' Constructs a URL for downloading PCI (Plan Cadastral Informatise) data
 #' from the specified site, with options to select the data format and scale.
 #'
 #' @param format `character`. Default is `"edigeo"`.
@@ -41,7 +41,7 @@ pci_construct_url <- function(format = "edigeo",
 ### Department section ----
 #' Get PCI data URL for a specific department
 #'
-#' Constructs the download URL for PCI (Plan Cadastral Informatisé) data
+#' Constructs the download URL for PCI (Plan Cadastral Informatise) data
 #' at the department scale for a given department code.
 #'
 #' @param departement `character`.
@@ -91,7 +91,7 @@ pci_get_dep_url <- function(departement,
 
 #' Get PCI data URLs for multiple departments
 #'
-#' Constructs download URLs for PCI (Plan Cadastral Informatisé) data
+#' Constructs download URLs for PCI (Plan Cadastral Informatise) data
 #' at the department scale for a vector of department codes.
 #'
 #' @param departements `character` vector.
@@ -121,7 +121,7 @@ pci_get_dep_urls <- function(departements, ...) {
     FUN = function(dep) {
       pci_get_dep_url(departement = dep, ...)
     },
-    FUN.VALUE = character(1)  # garantit un vecteur de chaînes
+    FUN.VALUE = character(1)
   )
 }
 
@@ -173,7 +173,7 @@ pci_detect_feuilles <- function(commune,
 
 #' Detect PCI feuille archives for a commune
 #'
-#' Retrieve the list of available PCI (Plan Cadastral Informatisé) feuille (sheet) archive names
+#' Retrieve the list of available PCI (Plan Cadastral Informatise) feuille (sheet) archive names
 #' for a given commune and format.
 #'
 #' @param commune `character`.
@@ -209,42 +209,42 @@ pci_choose_feuilles <- function(commune,
                                 skip = TRUE,
                                 ...) {
 
-  # Récupérer la liste des feuilles disponibles
+  # Get available sheets list
   feuilles <- pci_detect_feuilles(commune, format = format, skip = skip, ...)
 
-  # Valeur par défaut : toutes les feuilles
+  # Defaut value = all sheets
   default <- feuilles
 
-  # Si aucun code feuille fourni → toutes les feuilles
+  # If no code as argument = all sheets
   if (is.null(feuille)) {
     return(default)
   }
 
-  # Si l'utilisateur veut choisir → menu interactif
+  # If user want choose = interactive menu
   if (identical(feuille, "?")) {
-    cat("Feuilles disponibles :\n")
-    choice <- utils::menu(feuilles, title = sprintf("Choisissez une feuille pour la commune %s", commune))
+    cat("Available sheets :\n")
+    choice <- utils::menu(feuilles, title = sprintf("Choose the sheet for the city %s", commune))
     if (choice == 0) {
-      return(default)  # annulation → toutes les feuilles
+      return(default)  # cancel = all sheets
     } else {
       return(feuilles[choice])
     }
   }
 
-  # Vérification si la feuille existe dans la liste
+  # Check if sheet exist in the list
   if (!feuille %in% feuilles) {
-    warning(sprintf("Feuille '%s' introuvable pour la commune %s, utilisation de toutes les feuilles",
+    warning(sprintf("Sheet '%s' not found for the city %s, >> all sheets used",
                     feuille, commune))
     return(default)
   }
 
-  # Sinon, retourner celle demandée
+  # Else return asked sheet
   return(feuille)
 }
 
 #' Get PCI feuille archive URLs for a commune
 #'
-#' Retrieve URLs for one or multiple PCI (Plan Cadastral Informatisé) feuille (sheet) archives
+#' Retrieve URLs for one or multiple PCI (Plan Cadastral Informatise) feuille (sheet) archives
 #' for a given commune and format.
 #'
 #' @param commune `character`.
@@ -282,22 +282,22 @@ pci_get_feuille_url <- function(commune,
                                 skip = TRUE,
                                 ...) {
 
-  # Si feuille = "?", on propose un menu pour choisir plusieurs feuilles
+  # If feuille = "?", offer a menu to choose multiple sheets
   if (identical(feuille, "?")) {
-    # récupérer toutes les feuilles disponibles (sans filtre skip)
+    # retrieve all available sheets (without the skip filter)
     all_feuilles <- pci_choose_feuilles(commune, format = format, feuille = NULL, skip = skip, ...)
-    cat(sprintf("Feuilles disponibles pour la commune %s :\n", commune))
+    cat(sprintf("Available sheets for the commune %s:\n", commune))
 
-    # menu interactif : on utilise utils::select.list pour plusieurs sélections possibles
-    choix <- utils::select.list(all_feuilles, multiple = TRUE, title = "Choisissez une ou plusieurs feuilles")
+    # interactive menu: use utils::select.list for multiple selections
+    choix <- utils::select.list(all_feuilles, multiple = TRUE, title = "Choose one or more sheets")
 
     if (length(choix) == 0) {
-      stop("Aucune feuille sélectionnée. Abandon.")
+      stop("No sheet selected. Aborting.")
     }
 
     feuilles <- choix
   } else {
-    # sinon on utilise pci_choose_feuilles normalement
+    # otherwise use pci_choose_feuilles normally
     feuilles <- pci_choose_feuilles(commune, format = format, feuille = feuille, skip = skip, ...)
   }
 
@@ -305,23 +305,23 @@ pci_get_feuille_url <- function(commune,
   pci_url <- pci_construct_url(format = format, scale = "feuilles", ...)
   com <- cdg_construct_commune(commune)
 
-  # Préfixe + extension des archives
+  # Prefix + archive extension
   archive <- cfg_get_prefix_extent("pci", format, "feuilles")
 
-  # Générer les noms des archives
+  # Generate archive names
   bz2 <- paste0(archive$prefix, "-", feuilles, archive$extent)
 
-  # Vérification de disponibilité
+  # Check availability
   dispo <- pci_detect_feuilles(commune, skip = FALSE, format = format, ...)
   if (!all(bz2 %in% dispo)) {
     stop(sprintf(
-      "Erreur : certaines feuilles demandées ne sont pas disponibles pour la commune %s.\nManquantes : %s",
+      "Error: some requested sheets are not available for commune %s.\nMissing: %s",
       commune,
       paste(setdiff(bz2, dispo), collapse = ", ")
     ))
   }
 
-  # Retourner toutes les URLs correspondantes
+  # Return all corresponding URLs
   urls <- vapply(bz2, function(f) cdg_aggr_url(c(com, f), pci_url), FUN.VALUE = character(1))
   return(urls)
 }
@@ -380,7 +380,7 @@ pci_get_feuille_urls <- function(communes,       # vector of allowed communes (f
                                  skip = TRUE,
                                  ...) {
 
-  # If feuilles is NULL → all sheets for all communes
+  # If feuilles is NULL >>> all sheets for all communes
   if (is.null(feuilles)) {
     res_list <- lapply(communes, function(com) {
       urls <- pci_get_feuille_url(com, feuille = NULL, format = format, skip = skip, ...)
@@ -398,7 +398,7 @@ pci_get_feuille_urls <- function(communes,       # vector of allowed communes (f
     }
 
     if (is.null(names(feuilles))) {
-      # Unnamed feuilles → length(feuilles) must match length(communes)
+      # Unnamed feuilles >>> length(feuilles) must match length(communes)
       if (length(feuilles) != length(communes)) {
         stop("If 'feuilles' is unnamed, its length must match the length of 'communes'.", call. = FALSE)
       }
@@ -420,7 +420,7 @@ pci_get_feuille_urls <- function(communes,       # vector of allowed communes (f
       }, communes, feuilles, SIMPLIFY = FALSE)
 
     } else {
-      # Named feuilles → check keys
+      # Named feuilles >>> check keys
       feuilles_communes <- names(feuilles)
       if (!all(feuilles_communes %in% communes)) {
         stop("Some communes in 'feuilles' are not in the allowed 'communes' vector.", call. = FALSE)

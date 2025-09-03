@@ -33,16 +33,16 @@
 #' @examples
 #' \dontrun{
 #' # Download and read Edigeo format for communes "12345" and "67890"
-#' data_sf <- get_cadastre_pci(communes = c("12345", "67890"), format = "edigeo")
+#' data_sf <- get_pci_data(communes = c("12345", "67890"), format = "edigeo")
 #' }
 #' @export
 #'
-get_cadastre_pci <- function(communes,
-                             feuilles = NULL,
-                             format = c("edigeo", "dxf"),
-                             extract_dir = NULL,
-                             overwrite = TRUE,
-                             ...) {
+get_pci_data <- function(communes,
+                         feuilles = NULL,
+                         format = c("edigeo", "dxf"),
+                         extract_dir = NULL,
+                         overwrite = TRUE,
+                         ...) {
 
   format <- match.arg(format)
 

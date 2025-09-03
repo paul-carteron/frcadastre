@@ -4,7 +4,7 @@
 \alias{etalab_get_data_urls}
 \title{Get Etalab data URLs for multiple INSEE codes and data types}
 \usage{
-etalab_get_data_urls(insee_code, data = NULL, ...)
+etalab_get_data_urls(insee_code, data = NULL, verbose = TRUE, ...)
 }
 \arguments{
 \item{insee_code}{\code{character} vector.
@@ -17,6 +17,9 @@ If a list, it can be named or unnamed:
 \item unnamed list: length must match length of \code{insee_code}, each element is a vector of data types for corresponding INSEE code,
 \item named list: names correspond to INSEE codes, values are vectors of data types for those codes.
 }}
+
+\item{verbose}{\code{logical}.
+If \code{TRUE}, print informative messages.}
 
 \item{...}{Additional arguments passed to \code{\link{etalab_construct_url}}.}
 }

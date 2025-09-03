@@ -107,7 +107,7 @@ get_etalab_data <- function(insee_code,
   }
 
   # 2. Build URL table
-  urls_df <- etalab_get_data_urls(insee_code, data = data, ...) |>
+  urls_df <- etalab_get_data_urls(insee_code, data = data, verbose = verbose, ...) |>
     etalab_filter_existing_urls(verbose = verbose)
 
   if (nrow(urls_df) == 0) {

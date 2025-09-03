@@ -23,3 +23,7 @@ Imports:
 Depends: 
     R (>= 4.1.0)
 LazyData: true
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

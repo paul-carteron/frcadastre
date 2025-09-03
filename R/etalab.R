@@ -105,6 +105,8 @@ etalab_get_data_url <- function(insee_code, data, ...){
 #' If a list, it can be named or unnamed:
 #'   - unnamed list: length must match length of `insee_code`, each element is a vector of data types for corresponding INSEE code,
 #'   - named list: names correspond to INSEE codes, values are vectors of data types for those codes.
+#' @param verbose `logical`.
+#' If `TRUE`, print informative messages.
 #' @param ... Additional arguments passed to \code{\link{etalab_construct_url}}.
 #'
 #' @return A `data.frame` with columns:
@@ -139,15 +141,15 @@ etalab_get_data_url <- function(insee_code, data, ...){
 #' @export
 #'
 etalab_get_data_urls <- function(insee_code,     # vector of INSEE codes
-                                 data = NULL,    # list (named or unnamed): datasets per INSEE code,
-                                 # or NULL = retrieve all datasets
+                                 data = NULL,    # list (named or unnamed): datasets per INSEE code, or NULL = retrieve all datasets
+                                 verbose = TRUE,
                                  ...) {
 
   # Case 1: if 'data' is NULL → return all available datasets for all given INSEE codes
   if (is.null(data)) {
     res_list <- lapply(insee_code, function(code) {
       # Detect the type/scale of the INSEE code (commune, department, region, etc.)
-      scale <- cdg_detect_insee_code(code, T, F)
+      scale <- cdg_detect_insee_code(code, scale = TRUE, verbose)
 
       # Get the list of available datasets for this scale
       all_data <- cfg_get_data(scale, TRUE)$data

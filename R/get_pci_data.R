@@ -3,8 +3,8 @@
 #' This function downloads PCI cadastre archives for specified communes and optionally sheets,
 #' extracts all files into a single directory, and reads the spatial data into an `sf` object or list of `sf`.
 #'
-#' @param communes `character`
-#' vector of commune codes to download data for.
+#' @param insee_code insee_code `character` or `numeric`
+#' One or more INSEE codes for the communes or administrative units to download cadastre data for.
 #' @param feuilles `character`
 #' vector of sheet identifiers to filter (optional).
 #' @param format `character`
@@ -13,6 +13,9 @@
 #' path to the directory where archives will be extracted. Defaults to temporary directory.
 #' @param overwrite `logical`
 #' indicating whether to overwrite existing downloaded or extracted files. Default is ``FALSE``.
+#' @param verbose `logical` (default: `TRUE`)
+#' If `TRUE`, warnings about missing URLs or failed downloads are displayed.
+#' If `FALSE`, the function fails silently and returns `NULL` when issues occur.
 #' @param ...
 #' additional arguments passed to the URL retrieval function.
 #'
@@ -37,17 +40,18 @@
 #' }
 #' @export
 #'
-get_pci_data <- function(communes,
+get_pci_data <- function(insee_code,
                          feuilles = NULL,
                          format = c("edigeo", "dxf"),
                          extract_dir = NULL,
                          overwrite = TRUE,
+                         verbose = TRUE,
                          ...) {
 
   format <- match.arg(format)
 
   # 1. Récupérer les URLs
-  urls_df <- pci_get_feuille_urls(communes, feuilles = feuilles, format = format, ...)
+  urls_df <- pci_get_feuille_urls(insee_code, feuilles = feuilles, format = format, ...)
 
   if (nrow(urls_df) == 0) {
     stop("Aucune URL trouvée pour les paramètres fournis.")

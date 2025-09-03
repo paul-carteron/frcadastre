@@ -5,17 +5,18 @@
 \title{Download and Extract PCI Cadastre Data for Given Communes and Sheets}
 \usage{
 get_pci_data(
-  communes,
+  insee_code,
   feuilles = NULL,
   format = c("edigeo", "dxf"),
   extract_dir = NULL,
   overwrite = TRUE,
+  verbose = TRUE,
   ...
 )
 }
 \arguments{
-\item{communes}{\code{character}
-vector of commune codes to download data for.}
+\item{insee_code}{insee_code \code{character} or \code{numeric}
+One or more INSEE codes for the communes or administrative units to download cadastre data for.}
 
 \item{feuilles}{\code{character}
 vector of sheet identifiers to filter (optional).}
@@ -28,6 +29,10 @@ path to the directory where archives will be extracted. Defaults to temporary di
 
 \item{overwrite}{\code{logical}
 indicating whether to overwrite existing downloaded or extracted files. Default is \code{FALSE}.}
+
+\item{verbose}{\code{logical} (default: \code{TRUE})
+If \code{TRUE}, warnings about missing URLs or failed downloads are displayed.
+If \code{FALSE}, the function fails silently and returns \code{NULL} when issues occur.}
 
 \item{...}{additional arguments passed to the URL retrieval function.}
 }

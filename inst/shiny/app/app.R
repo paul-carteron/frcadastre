@@ -176,7 +176,7 @@ server <- function(input, output, session) {
     output$commune_name <- renderText(com_name)
 
     # Download
-    parcelles <- rcadastre::get_quick_etalab(input$commune) |>
+    parcelles <- rcadastre::get_etalab_bundle(input$commune) |>
       rcadastre::idu_rename_in_df("idu")
     parcelles$section <- toupper(parcelles$section)
     parcelles$section <- ifelse(nchar(parcelles$section) < 2,

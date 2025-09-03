@@ -380,7 +380,7 @@ idu_get_feuille <- function(idu, group_by_insee = FALSE) {
   feuilles_codes <- unique(substr(idu, 1, 10))
 
   # Download feuilles from Etalab
-  feuilles <- get_quick_etalab(insee_codes, "feuilles") |>
+  feuilles <- get_etalab_bundle(insee_codes, "feuilles") |>
     transform(codes = substr(id, 1, 10))
 
   # Keep only feuilles matching the provided IDUs
@@ -589,13 +589,11 @@ idu_get_lieudit <- function(idu){
   insee_codes <- unique(idu_parts$insee)
 
   # Download data from Etalab
-  parcelles <- get_quick_etalab(insee_codes) |> idu_rename_in_df("idu")
-  lieudits <- tryCatch(
-    get_quick_etalab(insee_codes, "lieux_dits"),
-    error = function(e) {
+  parcelles <- get_etalab_bundle(insee_codes) |> idu_rename_in_df("idu")
+  lieudits <- tryCatch(get_etalab_bundle(insee_codes, "lieux_dits"),
+                       error = function(e) {
       return(NULL)
-    }
-  )
+    })
   if (is.null(lieudits)) {
     return(NULL)
   }
@@ -605,15 +603,9 @@ idu_get_lieudit <- function(idu){
     stop("Etalab data must be 'sf' objects.", call. = FALSE)
   }
 
-  # Compute centroids of parcels for spatial join
-  parcelles_centroids <- suppressWarnings(sf::st_centroid(parcelles))
-
   # Join parcels with lieu-dit polygons
-  intersections <- sf::st_join(parcelles_centroids,
-                               lieudits,
-                               left = TRUE,
-                               join = sf::st_intersects
-                               ) |> sf::st_drop_geometry()
+  intersections <- sf::st_join(parcelles, lieudits, largest = TRUE) |>
+    sf::st_drop_geometry()
 
   # Check for NA in 'nom' field of lieudits
   if (any(is.na(intersections$nom)) || is.null(intersections)) {
@@ -719,7 +711,7 @@ idu_get_contenance <- function(idu){
   insee_codes <- unique(idu_parts$insee)
 
   # Download data from Etalab
-  parcelles <- get_quick_etalab(insee_codes) |> idu_rename_in_df("idu")
+  parcelles <- get_etalab_bundle(insee_codes) |> idu_rename_in_df("idu")
 
   # Ensure returned objects are sf
   if (!inherits(parcelles, "sf")) {

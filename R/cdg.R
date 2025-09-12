@@ -109,7 +109,7 @@ cdg_construct_url <- function(site,
 #'
 cdg_construct_commune <- function(commune){
   dep <- substr(commune, 1, 2)
-  paste(c(dep, commune), collapse = "/")
+  file.path(dep, commune)
 }
 
 ### Milesime section ----

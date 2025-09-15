@@ -1,302 +1,355 @@
-### URL section ----
-#' Construct Etalab data URL
-#'
-#' Constructs a URL to access Etalab data for a specified scale.
-#'
-#' @param scale `character`. Default is `"communes"`.
-#' Scale of data to retrieve. Must be one of `"departements"` or `"communes"`.
-#' @param ... Additional arguments passed to \code{\link{cdg_construct_url}}.
-#'
-#' @return A `character` string with the constructed URL.
-#'
-#' @seealso [cdg_construct_url()]
-#'
-#' @examples
-#' \dontrun{
-#' etalab_construct_url(scale = "departements")
-#' etalab_construct_url(scale = "communes")
-#' }
-#'
-#' @export
-#'
-etalab_construct_url <- function(scale = "communes",
-                                 ...) {
-  cdg_construct_url(
-    site = "etalab",
-    format = "geojson",
-    scale = scale,
-    allowed_formats = c("geojson"),
-    allowed_scales = c("departements", "communes"),
-    ...
-  )
-}
-
 ### Data section ----
-#' Get Etalab data URL for a given INSEE code and data type
+#' List ETALAB cadastre layers
 #'
-#' Constructs the download URL for Etalab data based on the INSEE code and requested data type.
+#' Returns the names of ETALAB cadastre layers for the requested type(s).
 #'
-#' @param insee_code `character`.
-#' INSEE code of the geographic unit (commune or department).
-#' @param data `character`.
-#' Type of data to retrieve. Must be one of the allowed data types for the given scale.
-#' @param ... Additional arguments passed to \code{\link{etalab_construct_url}}.
+#' @param type `character`. ETALAB data type. Must be one or more of `"raw"` or `"proc"`.
+#' `"raw"` corresponds to raw ETALAB layers.
+#' `"proc"` to processed layers.
+#' Default is `c("raw", "proc")`.
 #'
-#' @return A `character` string with the constructed URL.
+#' @return A named list of character vectors containing layer names for each requested type.
 #'
 #' @details
-#' The function automatically detects the geographic scale (commune or department) from the INSEE code,
-#' builds the corresponding URL, and verifies the data type is allowed. It constructs the full URL
-#' including the archive prefix and extension.
-#'
-#' @seealso [etalab_construct_url()]
+#' - `"raw"`: raw ETALAB layers such as `batiment`, `commune`, `parcelle`, etc.
+#' - `"proc"`: processed ETALAB layers such as `batiments`, `communes`, `parcelles`, etc.
+#' - Invalid `types` values will throw an error.
 #'
 #' @examples
 #' \dontrun{
-#' etalab_get_data_url("75056", "batiments")
-#' etalab_get_data_url("69", "voie")
+#' # Get all raw layers
+#' get_etalab_layernames("raw")
+#'
+#' # Get all processed layers
+#' get_etalab_layernames("proc")
+#'
+#' # Get both types at once
+#' get_etalab_layernames(c("raw", "proc"))
 #' }
 #'
 #' @export
 #'
-etalab_get_data_url <- function(insee_code, data, ...){
-
-  # scale
-  scale <- cdg_detect_insee_code(insee_code, T, F)
-  if (scale == "communes"){
-    loc <- cdg_construct_commune(insee_code)
-  } else {
-    loc <- insee_code
-  }
-
-  # base url
-  etalab_url <- etalab_construct_url(scale = scale, ...)
-
-  # data
-  allowed_data <- cfg_get_data(scale, T)
-  data <- match.arg(data, allowed_data$data)
-  type <- allowed_data[allowed_data$data == data, "type"]
-  if (type == "raw"){
-    raw <- type
-  } else {
-    raw <- NULL
-  }
-
-  # archive
-  archive <- cfg_get_prefix_extent(site = "etalab",
-                                   format = "geojson",
-                                   scale = scale
-                                   )[[type]]
-
-  gz <- paste0(archive$prefix, "-", insee_code, "-", data, archive$extent)
-
-  # result
-  cdg_aggr_url(c(loc, raw, gz), etalab_url)
+get_etalab_layernames <- function(type = c("raw", "proc")) {
+  mapping <- list(
+    raw  = c("batiment", "borne", "commune", "label", "lieudit", "numvoie",
+             "parcelle", "ptcanv", "section", "subdfisc", "subdsect",
+             "symblim", "tline", "tpoint", "tronfluv", "tronroute", "tsurf",
+             "zoncommuni"),
+    proc = c("batiments", "communes", "feuilles", "lieux_dits",
+             "parcelles", "prefixes_sections", "sections", "subdivisions_fiscales")
+  )
+  if (!all(type %in% names(mapping))) stop("Invalid type(s).")
+  mapping[type]
 }
 
-#' Get Etalab data URLs for multiple INSEE codes and data types
+#' Validate ETALAB cadastre layers
 #'
-#' Constructs download URLs for Etalab data for a vector of INSEE codes and optionally specified data types.
+#' Checks whether the requested ETALAB cadastre layers exist among the known raw and processed layers.
 #'
-#' @param insee_code `character` vector.
-#' Vector of INSEE codes (communes or departments).
-#' @param data `list` or `NULL`. Defaut is `NULL`.
-#' If `NULL`, retrieves URLs for all available data types for each INSEE code.
-#' If a list, it can be named or unnamed:
-#'   - unnamed list: length must match length of `insee_code`, each element is a vector of data types for corresponding INSEE code,
-#'   - named list: names correspond to INSEE codes, values are vectors of data types for those codes.
-#' @param verbose `logical`.
-#' If `TRUE`, print informative messages.
-#' @param ... Additional arguments passed to \code{\link{etalab_construct_url}}.
+#' @param data `character`. Vector of layer ETALAB names to validate.
+#'
+#' @return `TRUE` if all layers are valid.
+#'   Throws an error if any layer in `data` is invalid.
+#'
+#' @details
+#' - Uses `.etalab_data()` internally to obtain the list of valid layers.
+#' - Invalid layer names will trigger an error message.
+#'
+#' @examples
+#' \dontrun{
+#' # Valid layers
+#' .check_etalab_data(c("batiment", "parcelle"))
+#'
+#' # Invalid layers will throw an error
+#' .check_etalab_data(c("batiment", "invalid_layer"))
+#' }
+#'
+#' @keywords internal
+#'
+.check_etalab_data <- function(data, type = c("raw", "proc")) {
+  # Match argument
+  type <- match.arg(type, several.ok = TRUE)
+
+  # Get all valid layers for the requested type(s)
+  all_layers <- unlist(get_etalab_layernames(type), use.names = FALSE)
+
+  # Detect invalid layers
+  invalid <- setdiff(data, all_layers)
+
+  if (length(invalid)) {
+    stop(
+      sprintf(
+        "Invalid layer(s) for type(s) %s: %s\nValid layer names are: %s",
+        paste(type, collapse = ", "),
+        paste(invalid, collapse = ", "),
+        paste(all_layers, collapse = ", ")
+      ),
+      call. = FALSE
+    )
+  }
+
+  TRUE
+}
+
+### Arg section ----
+#' Generate Commune-Layer Pairs for Etalab Data
+#'
+#' Generates a data.frame of commune-layer pairs to facilitate Etalab data queries.
+#'
+#' @param commune `character` vector. The INSEE code(s) of the commune(s).
+#' @param data `character` vector or `list`.
+#' If `character`, a vector of layers will be paired with all communes (Cartesian product).
+#' If `list`, each element corresponds to a vector of layers for the matching commune.
 #'
 #' @return A `data.frame` with columns:
-#' \describe{
-#'   \item{insee_code}{INSEE code (character).}
-#'   \item{data}{Data type requested (character).}
-#'   \item{url}{Constructed URL (character).}
-#' }
+#' - `commune`: commune code
+#' - `layer`: corresponding layer
 #'
 #' @details
-#' This function supports flexible specification of data types to retrieve for each INSEE code.
-#' If `data` is NULL, all data types available for each INSEE code's scale are returned.
-#' The function internally validates arguments and constructs URLs using `etalab_get_data_url()`.
-#'
-#' @seealso [etalab_get_data_url(), etalab_construct_url()]
+#' - If `data` is a character vector, all layers are combined with all communes.
+#' - If `data` is a list, each element is paired with the corresponding commune.
+#' - The function ensures that a list of layers matches the length of `commune`.
 #'
 #' @examples
 #' \dontrun{
-#' # All data for all given INSEE codes
-#' etalab_get_data_urls(c("75056", "69123"))
+#' # Cartesian product example
+#' .get_etalab_arg_pairs(c("72187", "72188"), c("parcelles", "lieux_dits"))
 #'
-#' # Specific data types for each INSEE code (unnamed list)
-#' etalab_get_data_urls(c("75056", "69123"), data = list(c("batiments"), c("voie", "parcelles")))
+#' # Pairwise example
+#' .get_etalab_arg_pairs(c("72187", "72188"), list(
+#'   c("parcelles", "lieux_dits"),
+#'   c("parcelles")
+#' ))
+#' }
 #'
-#' # Named list of data types by INSEE code
-#' etalab_get_data_urls(
-#'   c("75056", "69123"),
-#'   data = list("75056" = c("batiments"), "69123" = c("voie", "parcelles"))
-#' )
+#' @keywords internal
+#'
+.get_etalab_arg_pairs <- function(commune, data) {
+  commune <- as.character(commune)
+  if (is.list(data)) {
+    if (length(data) != length(commune)) stop("List of data must match commune length.")
+    do.call(rbind, lapply(seq_along(commune), \(i) {
+      data.frame(commune = commune[i], layer = data[[i]], stringsAsFactors = FALSE)
+    }))
+  } else {
+    expand.grid(commune = commune, layer = data, stringsAsFactors = FALSE)
+  }
+}
+
+### URL section ----
+#' Generate URLs for Etalab Cadastre Data
+#'
+#' This internal function constructs URLs for Etalab cadastre data
+#' given a set of commune codes and requested layers.
+#'
+#' @param commune `character` or `numeric` vector. The INSEE code(s) of the commune(s).
+#' @param data `character` vector or `list`.
+#' If `character`, a vector of layers will be paired with all communes (Cartesian product).
+#' If `list`, each element corresponds to a vector of layers for the matching commune.
+#' @param millesime `character`. The version or millesime of the dataset.
+#' Must be on of `get_data_millesimes("etalab")`. Default is `"latest"`.
+#'
+#' @return A `character` vector containing unique URLs to the requested Etalab data layers.
+#'
+#' @details
+#' - Validates that the requested layers exist.
+#' - Generates commune-layer pairs (cartesian or pairwise).
+#' - Determines layer type (`raw` or `proc`) and constructs the corresponding URLs.
+#' - Only URLs matching the expected pattern are returned.
+#'
+#' @seealso [get_etalab_layernames()], [get_data_millesimes()]
+#'
+#' @examples
+#' \dontrun{
+#' # Single commune, multiple layers
+#' .get_etalab_urls("72187", c("parcelles", "lieux_dits"))
+#'
+#' # Multiple communes, pairwise layers
+#' .get_etalab_urls(c("72187", "72181"), list(c("parcelles", "lieux_dits"),c("commune")))
+#' }
+#'
+#' @keywords internal
+#'
+.get_etalab_urls <- function(commune, data, millesime = "latest") {
+  commune <- as.character(commune)
+  insee_check(commune)
+  message("")
+  data_flat <- if (is.list(data)) unlist(data, use.names = FALSE) else data
+  .check_etalab_data(data_flat, type = c("raw", "proc"))
+
+  pairs <- .get_etalab_arg_pairs(commune, data)
+  layer_type <- sapply(pairs$layer, \(d) {
+    if (d %in% get_etalab_layernames("proc")$proc) return("proc")
+    if (d %in% get_etalab_layernames("raw")$raw) return("raw")
+    NA_character_
+  })
+
+  get_url_one <- function(commune, layer, dt) {
+    base <- .construct_data_url("etalab", commune, millesime)
+    if (dt == "raw") base <- file.path(base, "raw")
+    all_links <- .detect_urls(base, absolute = TRUE)
+    pattern <- paste0("^.*/", ifelse(dt=="proc","cadastre","pci"), "-[0-9]+-", layer, "\\.json\\.gz$")
+    all_links[grepl(pattern, all_links)]
+  }
+
+  unique(unlist(mapply(get_url_one, pairs$commune, pairs$layer, layer_type, SIMPLIFY = FALSE)))
+}
+
+#' Download and Read Etalab Cadastre Data
+#'
+#' This function downloads Etalab cadastre data for given communes
+#' and layers, extracts the archives, and reads the GeoJSON files into `sf` objects.
+#'
+#' @param commune `character` or `numeric` vector. The INSEE code(s) of the commune(s).
+#' @param data `character` vector or `list`.
+#' If `character`, a vector of layers will be paired with all communes (Cartesian product).
+#' If `list`, each element corresponds to a vector of layers for the matching commune.
+#' Must be dataset names returned by [get_etalab_layernames()].
+#' @param millesime `character`. The version or millesime of the dataset.
+#' Must be on of `get_data_millesimes("etalab")`. Default is `"latest"`.
+#' @param extract_dir `character` or `NULL`. Directory where files will be downloaded and extracted.
+#' If `NULL`, a temporary directory is used.
+#' @param verbose `logical`. If `TRUE`, prints progress messages.
+#'
+#' @return An `sf` object if a single layer is retrieved, or a named list of `sf`
+#' objects if multiple layers are retrieved.
+#' If no valid data is retrieved, the function returns `NULL` with a warning.
+#'
+#' @seealso [get_etalab_layernames()], [get_data_millesimes()]
+#'
+#' @examples
+#' \dontrun{
+#' # Download and read parcels and lieux_dits for one commune
+#' get_etalab_data("72187", c("parcelles", "lieux_dits"))
+#'
+#' # Multiple communes with pairwise layers
+#' get_etalab_data(c("72187", "72181"), list(c("parcelles", "lieux_dits"), c("commune")))
 #' }
 #'
 #' @export
 #'
-etalab_get_data_urls <- function(insee_code,     # vector of INSEE codes
-                                 data = NULL,    # list (named or unnamed): datasets per INSEE code, or NULL = retrieve all datasets
-                                 verbose = TRUE,
-                                 ...) {
+get_etalab_data <- function(commune,
+                            data,
+                            millesime = "latest",
+                            extract_dir = NULL,
+                            verbose = TRUE) {
 
-  # Case 1: if 'data' is NULL → return all available datasets for all given INSEE codes
-  if (is.null(data)) {
-    res_list <- lapply(insee_code, function(code) {
-      # Detect the type/scale of the INSEE code (commune, department, region, etc.)
-      scale <- cdg_detect_insee_code(code, scale = TRUE, verbose)
+  # 1. Generate URLs
+  urls <- .get_etalab_urls(commune, data, millesime)
+  if (length(urls) == 0) {
+    .log_warn(verbose, "No URLs found for the requested layers.")
+    return(NULL)
+  }
+  .log_msg(verbose, length(urls), " URL(s) found.")
 
-      # Get the list of available datasets for this scale
-      all_data <- cfg_get_data(scale, TRUE)$data
+  # 2. Prepare extraction directory
+  if (is.null(extract_dir)) extract_dir <- tempfile(pattern = "cadastre_extract_")
+  if (!dir.exists(extract_dir)) dir.create(extract_dir, recursive = TRUE)
 
-      # Build the URL for each dataset using 'etalab_get_data_url'
-      urls <- vapply(all_data, function(d) {
-        etalab_get_data_url(insee_code = code, data = d, ...)
-      }, character(1))
+  # 3. Download and extract all URLs
+  results <- .download_archives(
+    urls = urls,
+    destfiles = file.path(extract_dir, basename(urls)),
+    extract_dir = extract_dir,
+    verbose = verbose
+  )
 
-      # Return a dataframe with one row per dataset
-      data.frame(
-        insee_code = code,
-        data = all_data,
-        url = urls,
-        stringsAsFactors = FALSE
-      )
-    })
-
-  } else {
-    # Case 2: user provided 'data'
-
-    # Ensure that 'data' is indeed a list
-    if (!is.list(data)) {
-      stop("'data' must be a list, named or not.")
-    }
-
-    # Case 2a: 'data' is an unnamed list
-    if (is.null(names(data))) {
-      # Ensure that 'data' has the same length as 'insee_code'
-      if (length(data) != length(insee_code)) {
-        stop("'data' must have same length that 'insee_code'")
-      }
-
-      # For each INSEE code and its corresponding data list
-      res_list <- mapply(function(code, datas) {
-        # If no data specified → retrieve all available datasets
-        if (is.null(datas)) {
-          scale <- cdg_detect_insee_code(code, scale = TRUE)
-          datas <- cfg_get_data(scale, TRUE)$data
-        }
-
-        # Build URLs for each dataset
-        urls <- vapply(datas, function(d) {
-          etalab_get_data_url(insee_code = code, data = d, ...)
-        }, character(1))
-
-        # Return a dataframe for this code
-        data.frame(
-          insee_code = code,
-          data = datas,
-          url = urls,
-          stringsAsFactors = FALSE
-        )
-      }, insee_code, data, SIMPLIFY = FALSE)
-
-    } else {
-      # Case 2b: 'data' is a named list (names = INSEE codes)
-
-      data_names <- names(data)
-      # Ensure that all provided names exist in 'insee_code'
-      if (!all(data_names %in% insee_code)) {
-        stop("Some keys in 'data' are not found for 'insee_code'.")
-      }
-
-      res_list <- lapply(insee_code, function(code) {
-        # Get datasets associated with this INSEE code
-        datas <- data[[as.character(code)]]
-
-        # If not specified, retrieve all available datasets
-        if (is.null(datas)) {
-          scale <- cdg_detect_insee_code(code, scale = TRUE)
-          datas <- cfg_get_data(scale, TRUE)$data
-        }
-
-        # Build URLs for each dataset
-        urls <- vapply(datas, function(d) {
-          etalab_get_data_url(insee_code = code, data = d, ...)
-        }, character(1))
-
-        # Return dataframe for this code
-        data.frame(
-          insee_code = code,
-          data = datas,
-          url = urls,
-          stringsAsFactors = FALSE
-        )
-      })
-    }
+  # 4. Check for successful downloads
+  if (all(sapply(results, is.null))) {
+    .log_warn(verbose, "All downloads failed.")
+    return(NULL)
   }
 
-  # Combine all dataframes into a single dataframe
-  do.call(rbind, res_list)
+  # 5. Read GeoJSON files
+  sf_data <- tryCatch(
+    .read_geojson(list.files(extract_dir, full.names = TRUE), type = "file"),
+    error = function(e) {
+      .log_warn(verbose, "Failed to read GeoJSON: ", conditionMessage(e))
+      NULL
+    }
+  )
+
+  sf_data
 }
 
-#' Filter and validate existing URLs in a data.frame
+#' Download cadastre processed datasets from Etalab "bundle" cadastre.data.gouv
 #'
-#' This function checks if the URLs in a data.frame are accessible.
-#' Invalid or unreachable URLs are removed from the result.
-#' Optionally, warnings and messages are displayed if `verbose = TRUE`.
+#' This function downloads one or several dataset layer (e.g., `"parcelles"`) for
+#' one or several INSEE identifiers (department or commune) using the Etalab
+#' "bundle" cadastre.data.gouv.
+#' The results are returned as an `sf` object. If multiple files are retrieved
+#' (e.g. several communes or layers), they are combined into a single `sf`
+#' objects list.
 #'
-#' @param df A `data.frame` with columns \code{insee_code}, \code{data}, and \code{url}.
-#' @param verbose Logical (default = `TRUE`).
-#' If `TRUE`, display warnings for removed URLs and a message about how many were kept.
+#' @param id `character` or `numeric` vector. The INSEE code(s) of the commune(s) or department(s).
 #'
-#' @return A filtered `data.frame` containing only rows with valid and accessible URLs.
+#' @param data `character` vector or `list`.
+#' If `character`, a vector of layers will be paired with all communes (Cartesian product).
+#' If `list`, each element corresponds to a vector of layers for the matching commune.
+#' Must be dataset names returned by [get_etalab_layernames("proc")].
 #'
-#' @seealso [.url_exists] for the low-level URL existence check.
+#' @return An `sf` object if a single layer is retrieved, or a named list of `sf`
+#' objects if multiple layers are retrieved.
+#'
+#' @seealso [get_etalab_layernames()]
 #'
 #' @examples
-#' # Example data
-#' df <- data.frame(
-#'   insee_code = c("00001", "00002"),
-#'   data = c("example1", "example2"),
-#'   url = c("https://www.r-project.org", "https://nonexistent.example.com"),
-#'   stringsAsFactors = FALSE
-#' )
+#' \dontrun{
+#' # Download parcel geometries for a single commune
+#' parcelles <- get_etalab("72187", data = "parcelles")
 #'
-#' # Filter valid URLs
-#' etalab_filter_existing_urls(df, verbose = TRUE)
+#' # Download several layers for one commune
+#' layers <- get_etalab("72187", data = c("parcelles", "sections"))
+#'
+#' # Download parcel geometries for multiple communes
+#' multi <- get_etalab(c("72187", "72032"), data = "parcelles")
+#'
+#' # Different layers for each commune
+#' custom <- get_etalab(id = c("72187", "72181"), data = list(c("parcelles", "sections"), "communes"))
+#' }
 #'
 #' @export
 #'
-etalab_filter_existing_urls <- function(df, verbose = TRUE) {
-  # Check that input has the required structure
-  if (!all(c("insee_code", "data", "url") %in% names(df))) {
-    stop("The input must be a data.frame with columns 'insee_code', 'data' and 'url'.")
-  }
+get_etalab <- function(id, data = "parcelles", verbose = TRUE) {
 
-  # Apply the URL test to all rows
-  exists_vec <- vapply(df$url, .url_exists, logical(1))
+  # 1. Validate requested datasets
+  data_flat <- if (is.list(data)) unlist(data, use.names = FALSE) else data
+  tryCatch(
+    .check_etalab_data(data_flat, type = "proc"),
+    error = function(e) {
+      stop("Error in get_etalab: ", conditionMessage(e), call. = FALSE)
+    }
+  )
 
-  # If some URLs are invalid → show a warning only if verbose = TRUE
-  if (any(!exists_vec) && verbose) {
-    bad_urls <- df$url[!exists_vec]
-    warning(sprintf("%d URL(s) not accessible and removed:\n- %s",
-                    length(bad_urls),
-                    paste(bad_urls, collapse = "\n- ")),
-            call. = FALSE)
-  }
+  # 2. Build commune x layer pairs
+  arg_pairs <- .get_etalab_arg_pairs(id, data)
 
-  # Keep only the valid URLs
-  res <- df[exists_vec, , drop = FALSE]
+  # 3. Detect scale for each commune
+  scale <- insee_check(arg_pairs$commune, scale_as_return = TRUE, verbose = verbose)
+  format <- "geojson"
 
-  # Inform the user if verbose = TRUE
-  if (verbose) {
-    message(sprintf("Kept %d / %d URLs.", nrow(res), nrow(df)))
-  }
+  # 4. Build URLs
+  url_template <- "https://cadastre.data.gouv.fr/bundler/cadastre-etalab/%s/%s/%s/%s"
+  urls <- sprintf(url_template, scale, arg_pairs$commune, format, arg_pairs$layer)
 
-  return(res)
+  # 5. Download and read geometries from URLs
+  sf_data <- lapply(seq_along(urls), function(i) {
+    u <- urls[i]
+    layer_name <- arg_pairs$layer[i]
+    res <- tryCatch(.read_geojson(u, type = "url"), error = function(e) NULL)
+    if (!inherits(res, "sf") || is.null(res)) return(NULL)
+    # Return a named list with the layer name
+    setNames(list(res), layer_name)
+  })
+
+  # 6. Remove NULLs
+  sf_data <- sf_data[!vapply(sf_data, is.null, logical(1))]
+
+  # 7. Flatten the list (each element is an sf object named by layer)
+  sf_data <- unlist(sf_data, recursive = FALSE)
+  sf_list <- unname(sf_data)
+  names_list <- names(sf_data)
+
+  # 8. Aggregate layers by name (multiple communes for the same layer)
+  .aggregate_sf_by_layer(sf_list, names_list)
 }

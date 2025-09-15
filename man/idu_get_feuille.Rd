@@ -4,23 +4,32 @@
 \alias{idu_get_feuille}
 \title{Get feuille IDs from IDU codes}
 \usage{
-idu_get_feuille(idu, group_by_insee = FALSE)
+idu_get_feuille(idu, result_as_list = FALSE)
 }
 \arguments{
 \item{idu}{A \code{character} vector of valid IDU codes.}
+
+\item{result_as_list}{\code{logical}. If \code{TRUE}, returns a named list where
+names are INSEE codes and values are vectors of feuille IDs.
+If \code{FALSE} (default), returns a flat character vector of feuille IDs.}
 }
 \value{
-A \code{character} vector of feuille IDs corresponding to the input IDUs.
+Either a \code{character} vector of feuille IDs (\code{result_as_list = FALSE})
+or a named \code{list} of feuille IDs grouped by INSEE code (\code{result_as_list = TRUE}).
 }
 \description{
-This function takes one or more IDU codes, validates them, extracts their
-INSEE and feuille components, downloads feuille data from Etalab, and returns
-the matching feuille IDs.
+This internal function retrieves the feuille (sheet) IDs associated with
+one or more IDU codes. It validates the IDUs, extracts their INSEE and
+feuille components, downloads feuille data from Etalab, and returns the
+matching feuille IDs.
 }
 \examples{
 \dontrun{
-# Get feuille IDs for a set of IDU codes
-idu_get_feuille(c("12345ABCDE6789", "54321ZZZZZ1234"))
+# Get a flat vector of feuille IDs
+idu_get_feuille(c("721870000A0001", "721870000A0002"))
+
+# Get feuille IDs grouped by INSEE code
+idu_get_feuille(c("721870000A0001", "721870000A0002"), result_as_list = TRUE)
 }
 
 }

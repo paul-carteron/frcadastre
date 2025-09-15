@@ -45,5 +45,6 @@ df2 <- data.frame(key = 1:3, original = c("A", "B", "C"))
 
 .merge_with_name(df1, df2, "id", "key", "original", "renamed")
 }
+
 }
 \keyword{internal}

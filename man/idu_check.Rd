@@ -19,9 +19,12 @@ Check if a vector contains valid IDU codes
 An IDU is defined as:
 \itemize{
 \item A \code{character} vector of length 14 for all entries
-\item First 5 characters are digits (0–9)
-\item Next 5 characters are uppercase letters (A–Z) or digits (0–9)
-\item Last 4 characters are digits (0–9)
+\item First 1 characters: department -> digits (0–9)
+\item Next 1 characters: department -> digits (0–9) or uppercase letters 'A'/'B'
+\item Next 3 characters: commune -> digits (0–9)
+\item Next 3 characters: prefixe -> digits (0–9)
+\item Next 2 characters: section -> digits (0–9) or uppercase letters (A–Z)
+\item Last 4 characters: numero -> digits (0–9)
 \item No missing values (NA) or empty strings
 \item No lowercase letters or special characters
 }

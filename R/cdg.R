@@ -18,16 +18,16 @@
 #'
 #' @examples
 #' \dontrun{
-#' .get_base_data_url("pci")
+#' get_base_data_url("pci")
 #' # Returns: "https://cadastre.data.gouv.fr/data/dgfip-pci-vecteur"
 #'
-#' .get_base_data_url("etalab")
+#' get_base_data_url("etalab")
 #' # Returns: "https://cadastre.data.gouv.fr/data/etalab-cadastre"
 #' }
 #'
 #' @keywords internal
 #'
-.get_base_data_url <- function(site) {
+get_base_data_url <- function(site) {
   site <- match.arg(site, c("pci", "etalab"))
 
   mapping <- c(
@@ -68,17 +68,17 @@
 #' @examples
 #' \dontrun{
 #' # PCI data for commune "72187"
-#' .construct_data_url("pci", 72187)
+#' construct_data_url("pci", 72187)
 #' # Returns: "https://cadastre.data.gouv.fr/data/dgfip-pci-vecteur/latest/edigeo/feuilles/72/72187"
 #'
 #' # Etalab data for commune "72187"
-#' .construct_data_url("etalab", "72187")
+#' construct_data_url("etalab", "72187")
 #' # Returns: "https://cadastre.data.gouv.fr/data/etalab-cadastre/latest/geojson/communes/72/72187"
 #' }
 #'
 #' @keywords internal
 #'
-.construct_data_url <- function(site,
+construct_data_url <- function(site,
                                 commune,
                                 millesime = "latest",
                                 format = NULL) {
@@ -88,7 +88,7 @@
 
   # Validate commune codes
   commune <- as.character(commune)
-  if (!all(commune %in% commune_2025$COM)) {
+  if (!all(commune %in% rcadastre::commune_2025$COM)) {
     stop("Some commune codes are invalid.")
   }
 
@@ -105,10 +105,10 @@
   }
 
   # Base URL
-  base <- .get_base_data_url(site)
+  base <- get_base_data_url(site)
 
   # Construct commune path
-  commune <- .construct_com_url(commune)
+  commune <- construct_data_url(commune)
 
   # Construct URLs (vectorized)
   file.path(base, millesime, format, scale, commune)
@@ -125,13 +125,13 @@
 #'
 #' @examples
 #' \dontrun{
-#' .construct_com_url("72187")
+#' construct_data_url("72187")
 #' # Returns: "72/72187"
 #' }
 #'
 #' @keywords internal
 #'
-.construct_com_url <- function(commune) {
+construct_data_url <- function(commune) {
   stopifnot(is.character(commune), nchar(commune) == 5)
 
   dep <- substr(commune, 1, ifelse(substr(commune, 1, 2) == "97", 3, 2))
@@ -156,11 +156,9 @@
 #' are returned, excluding parent directory links (`"../"`) and empty values.
 #' If `absolute = TRUE`, URLs are normalized relative to the input base.
 #'
-#' @seealso [cdg_aggr_url(), pci_get_feuille_urls()]
-#'
 #' @examples
 #' \dontrun{
-#' links <- .detect_urls(.construct_data_url("etalab", "72187"))
+#' links <- detect_urls(construct_data_url("etalab", "72187"))
 #' print(links)
 #' }
 #'
@@ -169,19 +167,19 @@
 #'
 #' @keywords internal
 #'
-.detect_urls <- function(urls, absolute = TRUE) {
+detect_urls <- function(url, absolute = TRUE) {
   detect_one <- function(url) {
     page <- request(url) |>
-      httr2::req_perform() |>
-      httr2::resp_body_html()
+      req_perform() |>
+      resp_body_html()
 
-    links <- xml2::xml_find_all(page, ".//a[@href]") |> xml2::xml_attr("href")
+    links <- xml_find_all(page, ".//a[@href]") |> xml_attr("href")
     links <- links[!is.na(links) & links != "../" & nzchar(links)]
 
     if (absolute) {
       # Ensure the base ends with the commune folder
       base <- paste0(url, "/")  # add trailing slash
-      links <- xml2::url_absolute(links, base = base)
+      links <- url_absolute(links, base = base)
     } else {
       links <- sub("/$", "", links)
     }
@@ -189,7 +187,7 @@
     unique(links)
   }
 
-  unlist(lapply(urls, detect_one), use.names = FALSE)
+  unlist(lapply(url, detect_one), use.names = FALSE)
 }
 
 #' Detect available years (millesimes)
@@ -214,7 +212,7 @@
 #'
 get_data_millesimes <- function(site) {
   site <- match.arg(site, c("pci", "etalab"))
-  .detect_urls(.get_base_data_url(site), FALSE)
+  detect_urls(get_base_data_url(site), FALSE)
 }
 
 ### INSEE code section ----
@@ -268,14 +266,14 @@ insee_check <- function(x, scale_as_return = FALSE, verbose = TRUE) {
       # Commune
       idx <- which(communes$COM == code)
       if (length(idx) == 0) stop(sprintf("Commune '%s' not found. Run rcadastre::commune_2025", code))
-      .log_msg(verbose, sprintf("Commune '%s' = '%s' selected", code, communes$NCCENR[idx]))
+      log_msg(verbose, sprintf("Commune '%s' = '%s' selected", code, communes$NCCENR[idx]))
       if (scale_as_return) scales_detected[i] <- "communes"
 
     } else if (nchar(code) %in% c(2,3)) {
       # Département
       idx <- which(departements$DEP == code)
       if (length(idx) == 0) stop(sprintf("Department '%s' not found. Run rcadastre::departement_2025", code))
-      .log_msg(verbose, sprintf("Department '%s' = '%s' selected", code, departements$LIBELLE[idx]))
+      log_msg(verbose, sprintf("Department '%s' = '%s' selected", code, departements$LIBELLE[idx]))
       if (scale_as_return) scales_detected[i] <- "departements"
 
     } else {

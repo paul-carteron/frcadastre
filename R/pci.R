@@ -40,8 +40,8 @@ get_pci_feuilles <- function(commune,
                              absolute = TRUE) {
 
   # Build URLs and detect available sheets
-  links <- .detect_urls(
-    .construct_data_url(site = "pci",
+  links <- detect_urls(
+    construct_data_url(site = "pci",
                         commune = commune,
                         millesime = millesime,
                         format = format),
@@ -81,25 +81,25 @@ get_pci_feuilles <- function(commune,
 #' @examples
 #' \dontrun{
 #' # Generate URLs for a single commune
-#' .get_pci_urls("72187")
+#' get_pci_urls("72187")
 #'
 #' # Generate URL for a specific sheet
-#' .get_pci_urls("72181000AB01")
+#' get_pci_urls("72181000AB01")
 #'
 #' # Multiple codes at once
-#' .get_pci_urls(c("72187", "72181000AB01"))
+#' get_pci_urls(c("72187", "72181000AB01"))
 #' }
 #'
 #' @keywords internal
 #'
-.get_pci_urls <- function(x,
+get_pci_urls <- function(x,
                           millesime = "latest",
                           format = "edigeo") {
 
   millesime <- match.arg(millesime, get_data_millesimes("pci"))
   format    <- match.arg(format, c("edigeo", "dxf"))
 
-  base  <- .get_base_data_url("pci")
+  base  <- get_base_data_url("pci")
   scale <- "feuilles"
 
   # Vérifier tous les codes avant de lapply
@@ -114,7 +114,7 @@ get_pci_feuilles <- function(commune,
       # Commune
       insee_check(code)
       message("")
-      .detect_urls(.construct_data_url(site = "pci",
+      detect_urls(construct_data_url(site = "pci",
                                        code,
                                        millesime = millesime,
                                        format = format),
@@ -124,7 +124,7 @@ get_pci_feuilles <- function(commune,
       commune <- substr(code, 1, 5)
       feuille <- sprintf("%s-%s.tar.bz2", format, code)
       file.path(base, millesime, format, scale,
-                .construct_com_url(commune), feuille)
+                construct_data_url(commune), feuille)
     }
   })
 
@@ -175,17 +175,16 @@ get_pci_data <- function(x,
                          millesime = "latest",
                          format = "edigeo",
                          extract_dir = NULL,
-                         overwrite = TRUE,
                          verbose = TRUE) {
 
   millesime <- match.arg(millesime, get_data_millesimes("pci"))
   format    <- match.arg(format, c("edigeo", "dxf"))
 
   # 1. Get all URLs
-  urls <- .get_pci_urls(x, millesime, format)
+  urls <- get_pci_urls(x, millesime, format)
 
   # 2. Download and extract all files in extract_dir
-  download_results <- .download_archives(
+  download_results <- download_archives(
     urls = urls,
     destfiles = NULL,
     extract_dir = extract_dir,
@@ -196,8 +195,8 @@ get_pci_data <- function(x,
 
   # 3. Read all extrated files in extract_dir
   sf_data <- switch(format,
-                    dxf = .read_dxf(extraction_path),
-                    edigeo = .read_edigeo(extraction_path))
+                    dxf = read_dxf(extraction_path),
+                    edigeo = read_edigeo(extraction_path))
 
   return(sf_data)
 }

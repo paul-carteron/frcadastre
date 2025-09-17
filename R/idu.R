@@ -18,16 +18,16 @@
 #'
 #' @examples
 #' \dontrun{
-#' .idu_fmt(c(1, 23, 456), width = 5)
+#' idu_fmt(c(1, 23, 456), width = 5)
 #' # Returns: "00001" "00023" "00456"
 #'
-#' .idu_fmt(c("ab", "cd"), width = 4, upper = TRUE)
+#' idu_fmt(c("ab", "cd"), width = 4, upper = TRUE)
 #' # Returns: "00AB" "00CD"
 #' }
 #'
 #' @keywords internal
 #'
-.idu_fmt <- function(x, width, upper = FALSE) {
+idu_fmt <- function(x, width, upper = FALSE) {
   x <- sprintf(paste0("%", width, "s"), as.character(x))
   x <- gsub(" ", "0", x)
   if (upper) x <- toupper(x)
@@ -69,8 +69,11 @@
 #' idu_build(com = "72187", prefix = "000", section = "A", numero = "1")
 #'
 #' # With a plots dataframe
-#' parcelle <- get_etalab_bundle(72187)
-#' parcelle$idu <- idu_build(com = parcelle$commune, prefix=parcelle$prefixe, section=parcelle$section, numero=parcelle$numero)
+#' parcelle <- get_etalab(72187)
+#' parcelle$idu <- idu_build(com = parcelle$commune,
+#'                           prefix=parcelle$prefixe,
+#'                           section=parcelle$section,
+#'                           numero=parcelle$numero)
 #' }
 #'
 #' @export
@@ -79,9 +82,9 @@ idu_build <- function(dep = NULL, com, prefix, section, numero) {
   # Ensure character
   dep     <- if (!is.null(dep)) as.character(dep) else NULL
   com     <- as.character(com)
-  prefix  <- .idu_fmt(prefix, 3)
-  section <- .idu_fmt(section, 2, upper = TRUE)
-  numero  <- .idu_fmt(numero, 4)
+  prefix  <- idu_fmt(prefix, 3)
+  section <- idu_fmt(section, 2, upper = TRUE)
+  numero  <- idu_fmt(numero, 4)
 
   # Check lengths consistency
   lengths <- c(
@@ -110,8 +113,8 @@ idu_build <- function(dep = NULL, com, prefix, section, numero) {
     com_len == 5,
     com,
     paste0(
-      .idu_fmt(dep, ifelse(substr(dep, 1, 2) == "97", 3, 2), upper = TRUE),
-      .idu_fmt(com, ifelse(substr(dep, 1, 2) == "97", 2, 3))
+      idu_fmt(dep, ifelse(substr(dep, 1, 2) == "97", 3, 2), upper = TRUE),
+      idu_fmt(com, ifelse(substr(dep, 1, 2) == "97", 2, 3))
     )
   )
 
@@ -163,7 +166,7 @@ idu_build <- function(dep = NULL, com, prefix, section, numero) {
 #' @export
 #'
 idu_split <- function(idu) {
-  .idu_assert(idu)
+  idu_assert(idu)
 
   # Extract first 2 and 3 characters (possible department codes)
   dep2 <- substr(idu, 1, 2)
@@ -237,7 +240,7 @@ idu_check <- function(x) {
 #'
 #' @keywords internal
 #'
-.idu_assert <- function(idu) {
+idu_assert <- function(idu) {
   idu <- as.character(idu)
   valid <- idu_check(idu)
   if (!all(valid)) {
@@ -367,16 +370,17 @@ idu_rename_in_df <- function(df, new_name) {
 #' df1 <- data.frame(id = 1:3, value = letters[1:3])
 #' df2 <- data.frame(key = 1:3, original = c("A", "B", "C"))
 #'
-#' .merge_with_name(df1, df2, "id", "key", "original", "renamed")
+#' merge_with_name(df1, df2, "id", "key", "original", "renamed")
 #' }
 #'
 #' @keywords internal
 #'
-.merge_with_name <- function(x, df, ref_x, ref_y, ini_col, fin_col) {
+merge_with_name <- function(x, df, ref_x, ref_y, ini_col, fin_col) {
   # Check that all columns exist
   missing_cols <- setdiff(ini_col, names(df))
   if (length(missing_cols) > 0) {
-    stop(sprintf("Column(s) '%s' not found in join table.", paste(missing_cols, collapse = ", ")), call. = FALSE)
+    stop(sprintf("Column(s) '%s' not found in join table.",
+                 paste(missing_cols, collapse = ", ")), call. = FALSE)
   }
 
   # Subset df to the columns we need
@@ -418,19 +422,19 @@ idu_rename_in_df <- function(df, new_name) {
 #'
 #' @examples
 #' \dontrun{
-#' .get_etalab_data_by_idu("72181000AB01")
-#' .get_etalab_data_by_idu(c("72181000AB01", "72181000AB02"), layer = "parcelles")
-#' .get_etalab_data_by_idu("72181000AB01", select_cols = c("idu", "cont"))
+#' get_etalab_data_by_idu("72181000AB01")
+#' get_etalab_data_by_idu(c("72181000AB01", "72181000AB02"), layer = "parcelles")
+#' get_etalab_data_by_idu("72181000AB01", select_cols = c("idu", "cont"))
 #' }
 #'
 #' @keywords internal
 #'
-.get_etalab_data_by_idu <- function(idu, layer = NULL, select_cols = NULL) {
-  .idu_assert(idu)
+get_etalab_data_by_idu <- function(idu, layer = NULL, select_cols = NULL) {
+  idu_assert(idu)
   idu_parts <- idu_split(idu)
   insee_codes <- unique(idu_parts$insee)
 
-  data <- get_etalab_bundle(insee_codes, layer)
+  data <- get_etalab(insee_codes, layer)
 
   if (!is.null(select_cols)) data <- data[, select_cols, drop = FALSE]
 
@@ -457,24 +461,25 @@ idu_rename_in_df <- function(df, new_name) {
 #' @examples
 #' \dontrun{
 #' # Get a flat vector of feuille IDs
-#' idu_get_feuille(c("721870000A0001", "721870000A0002"))
+#' idu_get_feuille(idu = c("721870000A0001", "721870000A0002"))
 #'
 #' # Get feuille IDs grouped by INSEE code
-#' idu_get_feuille(c("721870000A0001", "721870000A0002"), result_as_list = TRUE)
+#' idu_get_feuille(idu = c("721870000A0001", "721870000A0002"), result_as_list = TRUE)
 #' }
 #'
 #' @export
 #'
 idu_get_feuille <- function(idu, result_as_list = FALSE) {
   # Retrieve Etalab data
-  res <- .get_etalab_data_by_idu(idu, "feuilles")
+  res <- get_etalab_data_by_idu(idu, "feuilles")
 
   # Extract feuille codes
-  feuilles <- transform(res$data, codes = substr(id, 1, 10))
+  feuilles <- res$data
+  feuilles$codes <- substr(feuilles$id, 1, 10)
 
   # Filter only the relevant feuilles
-  selected <- feuilles[feuilles$codes %in% unique(substr(idu, 1, 10)), c("id", "commune")]
-  selected <- sf::st_drop_geometry(selected)
+  selected <- feuilles[feuilles$codes %in% unique(substr(idu, 1, 10)), c("id", "commune")] |>
+    st_drop_geometry()
 
   if (result_as_list) {
     # Create named list: names = insee codes, values = feuille IDs
@@ -508,12 +513,12 @@ idu_get_feuille <- function(idu, result_as_list = FALSE) {
 #'
 #' @keywords internal
 #'
-.idu_get_name <- function(idu, loc = c("both", "reg", "dep", "com"), cog_field = "NCC") {
+idu_get_name <- function(idu, loc = c("both", "reg", "dep", "com"), cog_field = "NCC") {
   # Match argument
   loc <- match.arg(loc)
 
   # Validate IDUs
-  .idu_assert(idu)
+  idu_assert(idu)
 
   # Split IDU into components
   idu_parts <- idu_split(idu)
@@ -527,18 +532,18 @@ idu_get_feuille <- function(idu, result_as_list = FALSE) {
 
   # Merge region names if requested
   if (loc %in% c("both", "reg")) {
-    res <- .merge_with_name(res, deps, "code_dep", "DEP", "REG", "code_reg")
-    res <- .merge_with_name(res, regs, "code_reg", "REG", cog_field, "reg_name")
+    res <- merge_with_name(res, deps, "code_dep", "DEP", "REG", "code_reg")
+    res <- merge_with_name(res, regs, "code_reg", "REG", cog_field, "reg_name")
   }
 
   # Merge department names if requested
   if (loc %in% c("both", "dep")) {
-    res <- .merge_with_name(res, deps, "code_dep", "DEP", cog_field, "dep_name")
+    res <- merge_with_name(res, deps, "code_dep", "DEP", cog_field, "dep_name")
   }
 
   # Merge commune names if requested
   if (loc %in% c("both", "com")) {
-    res <- .merge_with_name(res, coms, "insee", "COM", cog_field, "com_name")
+    res <- merge_with_name(res, coms, "insee", "COM", cog_field, "com_name")
   }
 
   # Keep only idu and requested name columns
@@ -570,9 +575,9 @@ idu_get_feuille <- function(idu, result_as_list = FALSE) {
 #'
 #' @keywords internal
 #'
-.idu_get_lieudit <- function(idu) {
+idu_get_lieudit <- function(idu) {
   # Validate IDUs
-  .idu_assert(idu)
+  idu_assert(idu)
 
   # Split IDU into components
   idu_parts <- idu_split(idu)
@@ -581,12 +586,12 @@ idu_get_feuille <- function(idu, result_as_list = FALSE) {
   insee_codes <- unique(idu_parts$insee)
 
   # Download Etalab data for parcels and lieux-dits
-  parcelles <- get_etalab_bundle(insee_codes, verbose = FALSE) |>
+  parcelles <- get_etalab(insee_codes, verbose = FALSE) |>
     idu_rename_in_df("idu") |>
     subset(idu %in% idu_parts$idu)
 
   lieudits  <- tryCatch(
-    get_etalab_bundle(insee_codes, "lieux_dits", verbose = FALSE),
+    get_etalab(insee_codes, "lieux_dits", verbose = FALSE),
     error = function(e) NULL
   )
 
@@ -609,7 +614,7 @@ idu_get_feuille <- function(idu, result_as_list = FALSE) {
   }
 
   # Merge IDU components with lieu-dit names
-  res <- .merge_with_name(
+  res <- merge_with_name(
     x       = idu_parts,
     df      = intersections,
     ref_x   = "idu",
@@ -646,9 +651,9 @@ idu_get_feuille <- function(idu, result_as_list = FALSE) {
 #'
 #' @keywords internal
 #'
-.idu_get_contenance <- function(idu) {
+idu_get_contenance <- function(idu) {
   # Validate IDUs
-  .idu_assert(idu)
+  idu_assert(idu)
 
   # Split IDU into components
   idu_parts <- idu_split(idu)
@@ -657,7 +662,7 @@ idu_get_feuille <- function(idu, result_as_list = FALSE) {
   insee_codes <- unique(idu_parts$insee)
 
   # Download Etalab parcel data
-  parcelles <- get_etalab_bundle(insee_codes, verbose = FALSE) |>
+  parcelles <- get_etalab(insee_codes, verbose = FALSE) |>
     idu_rename_in_df("idu") |>
     subset(idu %in% idu_parts$idu)
 
@@ -673,7 +678,7 @@ idu_get_feuille <- function(idu, result_as_list = FALSE) {
   }
 
   # Merge IDU parts with contenance
-  res <- .merge_with_name(
+  res <- merge_with_name(
     x       = idu_parts,
     df      = parcelles,
     ref_x   = "idu",
@@ -701,13 +706,12 @@ idu_get_feuille <- function(idu, result_as_list = FALSE) {
 #'   }
 #' @param ... Additional arguments passed to the internal attribute-specific functions.
 #'
-#' @return A `data.frame` containing the requested attribute(s) for each IDU. Columns always include `idu`,
-#'   followed by the requested attributes.
+#' @return A `data.frame` containing the requested attribute(s) for each IDU.
+#' Columns always include `idu`, followed by the requested attributes.
 #'
 #' @details
 #' - All IDU codes are validated before retrieving any data.
-#' - Internally, this function calls `.idu_get_feuille()`, `.idu_get_name()`, `.idu_get_lieudit()`,
-#'   or `.idu_get_contenance()` depending on the requested attribute(s).
+#' - Internally, this function calls internals functions depending on the requested attribute(s).
 #' - Multiple attributes can be requested at once; the result will contain all selected attributes in separate columns.
 #'
 #' @examples
@@ -741,9 +745,9 @@ idu_get_attribute <- function(idu, attribute = c("name", "lieudit", "contenance"
 
   # Mapping attribute to internal functions
   fun_map <- list(
-    name       = .idu_get_name,
-    lieudit    = .idu_get_lieudit,
-    contenance = .idu_get_contenance
+    name       = idu_get_name,
+    lieudit    = idu_get_lieudit,
+    contenance = idu_get_contenance
   )
 
   # Retrieve all attributes using lapply
@@ -773,7 +777,7 @@ idu_get_attribute <- function(idu, attribute = c("name", "lieudit", "contenance"
 #'
 #' @return A data.frame or sf object with requested attributes merged.
 #' @keywords internal
-.idu_get_attribute_in_df <- function(df, attributes = c("feuille", "name", "lieudit", "contenance"), ...) {
+idu_get_attribute_in_df <- function(df, attributes = c("feuille", "name", "lieudit", "contenance"), ...) {
   # Validate input type
   if (!inherits(df, c("data.frame", "sf"))) {
     stop("'df' must be a data.frame or sf object.", call. = FALSE)
@@ -796,7 +800,7 @@ idu_get_attribute <- function(idu, attribute = c("name", "lieudit", "contenance"
     new_cols <- setdiff(names(attr_df), "idu")
 
     # Merge using internal helper
-    df <- .merge_with_name(
+    df <- merge_with_name(
       x = df,
       df = attr_df,
       ref_x = idu_info$name,

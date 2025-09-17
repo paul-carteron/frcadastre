@@ -20,8 +20,8 @@ idu_get_attribute(idu, attribute = c("name", "lieudit", "contenance"), ...)
 \item{...}{Additional arguments passed to the internal attribute-specific functions.}
 }
 \value{
-A \code{data.frame} containing the requested attribute(s) for each IDU. Columns always include \code{idu},
-followed by the requested attributes.
+A \code{data.frame} containing the requested attribute(s) for each IDU.
+Columns always include \code{idu}, followed by the requested attributes.
 }
 \description{
 This function extracts one or more attributes associated with cadastral parcels
@@ -31,8 +31,7 @@ to dedicated internal functions for each attribute type.
 \details{
 \itemize{
 \item All IDU codes are validated before retrieving any data.
-\item Internally, this function calls \code{.idu_get_feuille()}, \code{.idu_get_name()}, \code{.idu_get_lieudit()},
-or \code{.idu_get_contenance()} depending on the requested attribute(s).
+\item Internally, this function calls internals functions depending on the requested attribute(s).
 \item Multiple attributes can be requested at once; the result will contain all selected attributes in separate columns.
 }
 }

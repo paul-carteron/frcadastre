@@ -26,10 +26,10 @@ matching feuille IDs.
 \examples{
 \dontrun{
 # Get a flat vector of feuille IDs
-idu_get_feuille(c("721870000A0001", "721870000A0002"))
+idu_get_feuille(idu = c("721870000A0001", "721870000A0002"))
 
 # Get feuille IDs grouped by INSEE code
-idu_get_feuille(c("721870000A0001", "721870000A0002"), result_as_list = TRUE)
+idu_get_feuille(idu = c("721870000A0001", "721870000A0002"), result_as_list = TRUE)
 }
 
 }

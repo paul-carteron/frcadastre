@@ -48,8 +48,11 @@ idu_build(dep = "72", com = "187", prefix = "000", section = "A", numero = "1")
 idu_build(com = "72187", prefix = "000", section = "A", numero = "1")
 
 # With a plots dataframe
-parcelle <- get_etalab_bundle(72187)
-parcelle$idu <- idu_build(com = parcelle$commune, prefix=parcelle$prefixe, section=parcelle$section, numero=parcelle$numero)
+parcelle <- get_etalab(72187)
+parcelle$idu <- idu_build(com = parcelle$commune,
+                          prefix=parcelle$prefixe,
+                          section=parcelle$section,
+                          numero=parcelle$numero)
 }
 
 }

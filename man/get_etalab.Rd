@@ -12,7 +12,9 @@ get_etalab(id, data = "parcelles", verbose = TRUE)
 \item{data}{\code{character} vector or \code{list}.
 If \code{character}, a vector of layers will be paired with all communes (Cartesian product).
 If \code{list}, each element corresponds to a vector of layers for the matching commune.
-Must be dataset names returned by \link{get_etalab_layernames("proc")}.}
+Must be dataset names returned by \code{get_etalab_layernames("proc")}.}
+
+\item{verbose}{\code{logical}. If \code{TRUE}, prints progress messages.}
 }
 \value{
 An \code{sf} object if a single layer is retrieved, or a named list of \code{sf}

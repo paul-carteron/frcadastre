@@ -58,15 +58,15 @@ get_etalab_layernames <- function(type = c("raw", "proc")) {
 #' @examples
 #' \dontrun{
 #' # Valid layers
-#' .check_etalab_data(c("batiment", "parcelle"))
+#' check_etalab_data(c("batiment", "parcelle"))
 #'
 #' # Invalid layers will throw an error
-#' .check_etalab_data(c("batiment", "invalid_layer"))
+#' check_etalab_data(c("batiment", "invalid_layer"))
 #' }
 #'
 #' @keywords internal
 #'
-.check_etalab_data <- function(data, type = c("raw", "proc")) {
+check_etalab_data <- function(data, type = c("raw", "proc")) {
   # Match argument
   type <- match.arg(type, several.ok = TRUE)
 
@@ -113,10 +113,10 @@ get_etalab_layernames <- function(type = c("raw", "proc")) {
 #' @examples
 #' \dontrun{
 #' # Cartesian product example
-#' .get_etalab_arg_pairs(c("72187", "72188"), c("parcelles", "lieux_dits"))
+#' get_etalab_arg_pairs(c("72187", "72188"), c("parcelles", "lieux_dits"))
 #'
 #' # Pairwise example
-#' .get_etalab_arg_pairs(c("72187", "72188"), list(
+#' get_etalab_arg_pairs(c("72187", "72188"), list(
 #'   c("parcelles", "lieux_dits"),
 #'   c("parcelles")
 #' ))
@@ -124,7 +124,7 @@ get_etalab_layernames <- function(type = c("raw", "proc")) {
 #'
 #' @keywords internal
 #'
-.get_etalab_arg_pairs <- function(commune, data) {
+get_etalab_arg_pairs <- function(commune, data) {
   commune <- as.character(commune)
   if (is.list(data)) {
     if (length(data) != length(commune)) stop("List of data must match commune length.")
@@ -162,22 +162,22 @@ get_etalab_layernames <- function(type = c("raw", "proc")) {
 #' @examples
 #' \dontrun{
 #' # Single commune, multiple layers
-#' .get_etalab_urls("72187", c("parcelles", "lieux_dits"))
+#' get_etalab_urls("72187", c("parcelles", "lieux_dits"))
 #'
 #' # Multiple communes, pairwise layers
-#' .get_etalab_urls(c("72187", "72181"), list(c("parcelles", "lieux_dits"),c("commune")))
+#' get_etalab_urls(c("72187", "72181"), list(c("parcelles", "lieux_dits"),c("commune")))
 #' }
 #'
 #' @keywords internal
 #'
-.get_etalab_urls <- function(commune, data, millesime = "latest") {
+get_etalab_urls <- function(commune, data, millesime = "latest") {
   commune <- as.character(commune)
   insee_check(commune)
   message("")
   data_flat <- if (is.list(data)) unlist(data, use.names = FALSE) else data
-  .check_etalab_data(data_flat, type = c("raw", "proc"))
+  check_etalab_data(data_flat, type = c("raw", "proc"))
 
-  pairs <- .get_etalab_arg_pairs(commune, data)
+  pairs <- get_etalab_arg_pairs(commune, data)
   layer_type <- sapply(pairs$layer, \(d) {
     if (d %in% get_etalab_layernames("proc")$proc) return("proc")
     if (d %in% get_etalab_layernames("raw")$raw) return("raw")
@@ -185,9 +185,9 @@ get_etalab_layernames <- function(type = c("raw", "proc")) {
   })
 
   get_url_one <- function(commune, layer, dt) {
-    base <- .construct_data_url("etalab", commune, millesime)
+    base <- construct_data_url("etalab", commune, millesime)
     if (dt == "raw") base <- file.path(base, "raw")
-    all_links <- .detect_urls(base, absolute = TRUE)
+    all_links <- detect_urls(base, absolute = TRUE)
     pattern <- paste0("^.*/", ifelse(dt=="proc","cadastre","pci"), "-[0-9]+-", layer, "\\.json\\.gz$")
     all_links[grepl(pattern, all_links)]
   }
@@ -235,19 +235,19 @@ get_etalab_data <- function(commune,
                             verbose = TRUE) {
 
   # 1. Generate URLs
-  urls <- .get_etalab_urls(commune, data, millesime)
+  urls <- get_etalab_urls(commune, data, millesime)
   if (length(urls) == 0) {
-    .log_warn(verbose, "No URLs found for the requested layers.")
+    log_warn(verbose, "No URLs found for the requested layers.")
     return(NULL)
   }
-  .log_msg(verbose, length(urls), " URL(s) found.")
+  log_msg(verbose, length(urls), " URL(s) found.")
 
   # 2. Prepare extraction directory
   if (is.null(extract_dir)) extract_dir <- tempfile(pattern = "cadastre_extract_")
   if (!dir.exists(extract_dir)) dir.create(extract_dir, recursive = TRUE)
 
   # 3. Download and extract all URLs
-  results <- .download_archives(
+  results <- download_archives(
     urls = urls,
     destfiles = file.path(extract_dir, basename(urls)),
     extract_dir = extract_dir,
@@ -256,15 +256,15 @@ get_etalab_data <- function(commune,
 
   # 4. Check for successful downloads
   if (all(sapply(results, is.null))) {
-    .log_warn(verbose, "All downloads failed.")
+    log_warn(verbose, "All downloads failed.")
     return(NULL)
   }
 
   # 5. Read GeoJSON files
   sf_data <- tryCatch(
-    .read_geojson(list.files(extract_dir, full.names = TRUE), type = "file"),
+    read_geojson(list.files(extract_dir, full.names = TRUE), type = "file"),
     error = function(e) {
-      .log_warn(verbose, "Failed to read GeoJSON: ", conditionMessage(e))
+      log_warn(verbose, "Failed to read GeoJSON: ", conditionMessage(e))
       NULL
     }
   )
@@ -282,11 +282,11 @@ get_etalab_data <- function(commune,
 #' objects list.
 #'
 #' @param id `character` or `numeric` vector. The INSEE code(s) of the commune(s) or department(s).
-#'
 #' @param data `character` vector or `list`.
 #' If `character`, a vector of layers will be paired with all communes (Cartesian product).
 #' If `list`, each element corresponds to a vector of layers for the matching commune.
-#' Must be dataset names returned by [get_etalab_layernames("proc")].
+#' Must be dataset names returned by `get_etalab_layernames("proc")`.
+#' @param verbose `logical`. If `TRUE`, prints progress messages.
 #'
 #' @return An `sf` object if a single layer is retrieved, or a named list of `sf`
 #' objects if multiple layers are retrieved.
@@ -315,14 +315,14 @@ get_etalab <- function(id, data = "parcelles", verbose = TRUE) {
   # 1. Validate requested datasets
   data_flat <- if (is.list(data)) unlist(data, use.names = FALSE) else data
   tryCatch(
-    .check_etalab_data(data_flat, type = "proc"),
+    check_etalab_data(data_flat, type = "proc"),
     error = function(e) {
       stop("Error in get_etalab: ", conditionMessage(e), call. = FALSE)
     }
   )
 
   # 2. Build commune x layer pairs
-  arg_pairs <- .get_etalab_arg_pairs(id, data)
+  arg_pairs <- get_etalab_arg_pairs(id, data)
 
   # 3. Detect scale for each commune
   scale <- insee_check(arg_pairs$commune, scale_as_return = TRUE, verbose = verbose)
@@ -336,10 +336,11 @@ get_etalab <- function(id, data = "parcelles", verbose = TRUE) {
   sf_data <- lapply(seq_along(urls), function(i) {
     u <- urls[i]
     layer_name <- arg_pairs$layer[i]
-    res <- tryCatch(.read_geojson(u, type = "url"), error = function(e) NULL)
+    res <- tryCatch(read_geojson(u, type = "url"), error = function(e) NULL)
     if (!inherits(res, "sf") || is.null(res)) return(NULL)
-    # Return a named list with the layer name
-    setNames(list(res), layer_name)
+    out <- list(res)
+    names(out) <- layer_name
+    out
   })
 
   # 6. Remove NULLs
@@ -351,5 +352,5 @@ get_etalab <- function(id, data = "parcelles", verbose = TRUE) {
   names_list <- names(sf_data)
 
   # 8. Aggregate layers by name (multiple communes for the same layer)
-  .aggregate_sf_by_layer(sf_list, names_list)
+  aggregate_sf_by_layer(sf_list, names_list)
 }

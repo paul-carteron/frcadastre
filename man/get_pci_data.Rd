@@ -9,7 +9,6 @@ get_pci_data(
   millesime = "latest",
   format = "edigeo",
   extract_dir = NULL,
-  overwrite = TRUE,
   verbose = TRUE
 )
 }

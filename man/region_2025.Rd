@@ -12,7 +12,6 @@ A data frame with 5 columns:
 \item{TNCC}{(integer) Type of clear name, 1 digit.}
 \item{NCC}{(character) Clear name (uppercase), up to 200 characters.}
 \item{NCCENR}{(character) Clear name with rich typography, up to 200 characters.}
-\item{NCCENR}{(character) Clear name with rich typography, up to 200 characters.}
 \item{LIBELLE}{(character) Clear name with rich typography and article, up to 200 characters.}
 }
 }

@@ -9,18 +9,18 @@
 #' @return An `sf` object representing the spatial features read from the DXF file(s),
 #' or a list of `sf` objects if aggregation fails.
 #'
-#' @importFrom sf st_read
+#' @importFrom sf st_read st_set_crs
 #'
 #' @seealso \code{\link[sf]{st_read}} for reading spatial vector data.
 #'
 #' @keywords internal
 #'
-.read_dxf <- function(path) {
+read_dxf <- function(path) {
   target_crs <- 2154
 
   # If path is a single DXF file, read and return it directly
   if (file.exists(path) && grepl("\\.DXF$", path, ignore.case = TRUE)) {
-    return(sf::st_set_crs(sf::st_read(path, quiet = TRUE), target_crs))
+    return(st_set_crs(st_read(path, quiet = TRUE), target_crs))
   }
 
   # Otherwise, assume path is a directory and list all DXF files inside
@@ -30,7 +30,7 @@
   }
 
   # Read all DXF files as sf objects
-  layers <- lapply(files, function(f) sf::st_set_crs(sf::st_read(f, quiet = TRUE), target_crs))
+  layers <- lapply(files, function(f) st_set_crs(st_read(f, quiet = TRUE), target_crs))
 
   # Try to aggregate all layers into a single sf object
   tryCatch({
@@ -57,7 +57,7 @@
 #'
 #' @keywords internal
 #'
-.read_edigeo <- function(edigeo_dir) {
+read_edigeo <- function(edigeo_dir) {
   if (!dir.exists(edigeo_dir)) {
     stop("The directory does not exist: ", edigeo_dir)
   }
@@ -71,19 +71,19 @@
   final_layers <- list()
 
   for (thf_file in thf_files) {
-    layers <- sf::st_layers(thf_file)$name
+    layers <- st_layers(thf_file)$name
 
     for (layer_name in layers) {
       message("Reading layer '", layer_name, "' from ", basename(thf_file))
-      layer_sf <- sf::st_read(thf_file, layer = layer_name, quiet = TRUE)
+      layer_sf <- st_read(thf_file, layer = layer_name, quiet = TRUE)
 
       if (!layer_name %in% names(layers_aggregated)) {
         layers_aggregated[[layer_name]] <- layer_sf
       } else {
         existing <- layers_aggregated[[layer_name]]
 
-        data_exist <- sf::st_set_geometry(existing, NULL)
-        data_new <- sf::st_set_geometry(layer_sf, NULL)
+        data_exist <- st_set_geometry(existing, NULL)
+        data_new <- st_set_geometry(layer_sf, NULL)
 
         cols_exist <- names(data_exist)
         cols_new <- names(data_new)
@@ -99,11 +99,11 @@
 
         # If attributes match exactly, rbind; otherwise, separate layers
         if (length(cols_only_in_exist) == 0 && length(cols_only_in_new) == 0 && length(diff_types_cols) == 0) {
-          geom_exist <- sf::st_geometry(existing)
-          geom_new <- sf::st_geometry(layer_sf)
+          geom_exist <- st_geometry(existing)
+          geom_new <- st_geometry(layer_sf)
           data_bind <- rbind(data_exist, data_new)
           geom_bind <- c(geom_exist, geom_new)
-          layers_aggregated[[layer_name]] <- sf::st_set_geometry(data_bind, geom_bind)
+          layers_aggregated[[layer_name]] <- st_set_geometry(data_bind, geom_bind)
         } else {
           # If differences, move existing to final_layers (if not already), add new separately
           if (!layer_name %in% names(final_layers)) {
@@ -143,7 +143,7 @@
 #'
 #' @keywords internal
 #'
-.read_geojson_file <- function(f) {
+read_geojson_file <- function(f) {
   name <- basename(f)
   name <- sub("\\.gz$", "", name, ignore.case = TRUE)
   name <- sub("\\.(geojson|json)$", "", name, ignore.case = TRUE)
@@ -174,7 +174,7 @@
 #'
 #' @keywords internal
 #'
-.read_geojson_url <- function(u) {
+read_geojson_url <- function(u) {
   name <- basename(u)
   name <- sub("\\.gz$", "", name, ignore.case = TRUE)
   name <- sub("\\.(geojson|json)$", "", name, ignore.case = TRUE)
@@ -197,7 +197,7 @@
 #'
 #' @keywords internal
 #'
-.aggregate_sf_by_layer <- function(sf_list, names_list) {
+aggregate_sf_by_layer <- function(sf_list, names_list) {
   unique_layers <- unique(names_list)
   aggregated <- lapply(unique_layers, function(layer_name) {
     idx <- which(names_list == layer_name)
@@ -228,7 +228,7 @@
 #'
 #' @param sources A character vector of file paths or URLs to GeoJSON/JSON files.
 #' @param type Character. Either `"file"` or `"url"`. Determines how the sources
-#'   are read. `"file"` uses `.read_geojson_file()`, `"url"` uses `.read_geojson_url()`.
+#'   are read. `"file"` uses `read_geojson_file()`, `"url"` uses `read_geojson_url()`.
 #'
 #' @return Either a single `sf` object if only one unique layer is found, or a
 #'   named list of `sf` objects for multiple layers. Names correspond to the
@@ -246,12 +246,12 @@
 #' \dontrun{
 #' # Read all GeoJSON files from a directory
 #' dir_files <- list.files("path/to/geojson_dir", full.names = TRUE)
-#' data_list <- .read_geojson(dir_files, type = "file")
+#' data_list <- read_geojson(dir_files, type = "file")
 #'
 #' # Read GeoJSON data from URLs
 #' urls <- c("https://example.com/layer1.geojson",
 #'           "https://example.com/layer2.geojson")
-#' data_list <- .read_geojson(urls, type = "url")
+#' data_list <- read_geojson(urls, type = "url")
 #'
 #' # Access a specific aggregated layer
 #' my_layer <- data_list[["numvoie"]]
@@ -259,11 +259,11 @@
 #'
 #' @keywords internal
 #'
-.read_geojson <- function(sources, type = c("file", "url")) {
+read_geojson <- function(sources, type = c("file", "url")) {
   type <- match.arg(type)
   readers <- switch(type,
-                    file = .read_geojson_file,
-                    url  = .read_geojson_url)
+                    file = read_geojson_file,
+                    url  = read_geojson_url)
 
   # Lecture
   sf_data <- lapply(sources, readers)
@@ -271,5 +271,5 @@
   names_list <- sapply(sf_data, `[[`, "name")
 
   # Agrégation par couche
-  .aggregate_sf_by_layer(sf_list, names_list)
+  aggregate_sf_by_layer(sf_list, names_list)
 }

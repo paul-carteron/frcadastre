@@ -1,30 +1,26 @@
 Package: rcadastre
-Title: Download and extract french cadastre 
+Title: R Interface to get french cadastre data
 Version: 0.0.0.9000
 Authors@R: 
     person("Matthieu", "Chevereau", , "matthieu.chevereau@hotmail.com", role = c("aut", "cre"))
-Description: Builds URLs, downloads, and extracts data from the French cadastre portal (<https://cadastre.data.gouv.fr/>). It distinguishes 
+Description: Get spatial vector data from the French cadastre portal (<https://cadastre.data.gouv.fr/>). It distinguishes 
     between "PCI" (Plan Cadastral Informatisé) data and "Etalab" datasets.
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Imports:
-    sf,
-    yaml,
-    DT,
     R.utils,
     archive,
     httr2,
-    leaflet,
-    openxlsx2,
-    shiny
+    sf,
+    xml2
 Depends: 
     R (>= 4.1.0)
 LazyData: true
 Suggests: 
     knitr,
     rmarkdown,
-    testthat (>= 3.0.0)
+    testthat (>= 3.1.7)
 VignetteBuilder: knitr
 Config/testthat/edition: 3

@@ -1,6 +1,7 @@
 # frcadastre
 
-## Introduction: The French Cadastre — definition & history
+## The French Cadastre
+### Short definition
 
 The **cadastre** is the set of maps, registers and databases that describe land parcels : their boundaries, surface, and usage.  
 In France, the cadastre is managed by the [**Direction Generale des Finances Publiques (DGFiP)**](https://www.economie.gouv.fr/dgfip). It is primarily used as a fiscal tool to calculate local property taxes, but also as a spatial reference dataset for urban planning, GIS analysis, and land management.  
@@ -24,15 +25,15 @@ Different products exist, each with specific use cases and limitations:
 
 - [**PCI Etalab**](https://cadastre.data.gouv.fr/datasets/cadastre-etalab): conversion of PCI raw data into more user-friendly formats (GeoJSON, Shapefile, …). Updated at the same frequency as PCI. Still split by departments or communes.
 
-- [**PCI Express**](https://geoservices.ign.fr/parcellaire-express-pci): produced by IGN. A quarterly-updated assembly of PCI data to avoid large downloads and make usage easier.  
+- [**PCI Express**](https://geoservices.ign.fr/parcellaire-express-pci): produced by IGN. A quarterly-updated assembly of PCI data, ideal for searching data by wrapping location method.  
 
 - [**BD Parcellaire**](https://geoservices.ign.fr/bdparcellaire): an IGN product, where PCI was geometrically adjusted. No longer updated since 2018.  
 
-- [**RPCU (Referentiel Parcellaire Cadastral Unique)**](https://geoservices.ign.fr/rpcu): joint project between DGFiP and IGN aiming at producing a unified, geometrically corrected dataset. Still a prototype, not usable yet. Tools such as *RPCUtools* allow users to apply their own geometric adjustments.  
+- [**RPCU (Referentiel Parcellaire Cadastral Unique)**](https://geoservices.ign.fr/rpcu): joint project between DGFiP and IGN aiming at producing a unified, geometrically corrected dataset. Still a prototype, not usable yet. Tools such as *RPCUtools* allow users to apply their own geometric adjustments.
 
----
+To get PCI Express or BD Parcellaire, you can use the greatfull [happign package](https://github.com/paul-carteron/happign). To use PCI and PCI Etalab, stay here ! :)
 
-## Focus on PCI
+### Focus on PCI
 
 Key facts about PCI (Plan Cadastral Informatisé):  
 
@@ -42,11 +43,9 @@ Key facts about PCI (Plan Cadastral Informatisé):
 - EDIGEO is rich but complex: many codes, hierarchical structures, and a format that is not directly GIS-friendly.  
 - Working with PCI requires:  
   - downloading many files (by sheet, commune, or department),  
-  - parsing EDIGEO or DXF.  
+  - parsing EDIGEO or DXF.
 
----
-
-## Focus on PCI Etalab
+### Focus on PCI Etalab
 
 The **Etalab cadastre** is a simplified and standardized version of PCI, intended for open data and GIS use.  
 
@@ -70,30 +69,15 @@ The **frcadastre** R package aims to:
 ### Main features
 
 For a quickly use, you can run directly `get_etalab()` to get `sf` objects from PCI Etalab processed data.
-I you want to get more data, you can use:
-- `get_pci_data()`
+If you want to access the initial (more complete) raw data, you can use:
+- `get_pci_data()`: donwload and dowload PCI data (in DXF or EDIGEO format);
+- `get_etalab_data()`: donwload and dowload PCI Etalab data (in compressed GEOJSON format).
 
-- `get_pci_data(commune, departement, format = c("edigeo", "dxf"))` – download PCI files.  
-- `download_etalab(commune, departement, format = c("geojson", "shp"))` – download Etalab data.  
-- `read_pci(path)` – parse PCI EDIGÉO/DXF into R (sf objects).  
-- `read_etalab(path)` – read Etalab files.  
-- `merge_feuilles_etalab(paths)` – merge several Etalab sheets.  
-- `filter_parcelles(obj, criteria)` – filter parcels by attributes.  
-- `plot_cadastre(obj)` – simple visualization.  
+You have also sommes utilitary functions to manage IDU for cadastral parcelles.
 
-### Typical workflow
+### Installation
 
-```r
-library(frcadastre)
-
-# Download Etalab data for a given commune
-download_etalab(commune = "Paris")
-
-# Read the data into an sf object
-cad <- read_etalab("data/etalab_paris.geojson")
-
-# Filter large parcels
-cad_large <- filter_parcelles(cad, criteria = expression(surface > 1000))
-
-# Plot
-plot_cadastre(cad_large)
+```installation
+# Just run
+install_github("mucau/frcadastre")
+```

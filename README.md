@@ -69,6 +69,7 @@ The **frcadastre** R package aims to:
 ### Main features
 
 For a quickly use, you can run directly `get_etalab()` to get `sf` objects from PCI Etalab processed data.
+
 If you want to access the initial (more complete) raw data, you can use:
 - `get_pci_data()`: donwload and dowload PCI data (in DXF or EDIGEO format);
 - `get_etalab_data()`: donwload and dowload PCI Etalab data (in compressed GEOJSON format).

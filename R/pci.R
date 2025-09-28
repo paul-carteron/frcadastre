@@ -93,8 +93,8 @@ get_pci_feuilles <- function(commune,
 #' @keywords internal
 #'
 get_pci_urls <- function(x,
-                          millesime = "latest",
-                          format = "edigeo") {
+                         millesime = "latest",
+                         format = "edigeo") {
 
   millesime <- match.arg(millesime, get_data_millesimes("pci"))
   format    <- match.arg(format, c("edigeo", "dxf"))
@@ -115,16 +115,16 @@ get_pci_urls <- function(x,
       insee_check(code)
       message("")
       detect_urls(construct_data_url(site = "pci",
-                                       code,
-                                       millesime = millesime,
-                                       format = format),
+                                     code,
+                                     millesime = millesime,
+                                     format = format),
                    absolute = TRUE)
     } else {
       # Feuille
       commune <- substr(code, 1, 5)
       feuille <- sprintf("%s-%s.tar.bz2", format, code)
       file.path(base, millesime, format, scale,
-                construct_data_url(commune), feuille)
+                construct_commune(commune), feuille)
     }
   })
 

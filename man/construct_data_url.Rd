@@ -4,14 +4,12 @@
 \alias{construct_data_url}
 \title{Construct the Full Data URL for cadastre.data.gouv}
 \usage{
-construct_data_url(commune)
-
-construct_data_url(commune)
+construct_data_url(site, commune, millesime = "latest", format = NULL)
 }
 \arguments{
-\item{commune}{\code{character} vector. The INSEE code(s) of the commune(s).}
-
 \item{site}{\code{character}. The cadastre site to use. Must be one of \code{"pci"} or \code{"etalab"}.}
+
+\item{commune}{\code{character} vector. The INSEE code(s) of the commune(s).}
 
 \item{millesime}{\code{character}. The version or millesime of the dataset.
 Must be on of \code{get_data_millesimes("pci")}. Default is \code{"latest"}.}
@@ -22,15 +20,10 @@ For "etalab", the default is "geojson".}
 }
 \value{
 A character vector of full URLs for the requested site, commune(s), and millesime.
-
-A \code{character} string combining department and commune codes separated by a slash.
 }
 \description{
 This function builds the complete URL to access cadastre data for a given cadastre.data.gouv site,
 commune, and millesime. The function handles default formats and scales for each site.
-
-Constructs a path string for a given commune code by prepending
-the department code (first two characters) and joining them with a slash.
 }
 \details{
 The function validates the site and commune codes.
@@ -52,11 +45,6 @@ construct_data_url("pci", 72187)
 # Etalab data for commune "72187"
 construct_data_url("etalab", "72187")
 # Returns: "https://cadastre.data.gouv.fr/data/etalab-cadastre/latest/geojson/communes/72/72187"
-}
-
-\dontrun{
-construct_data_url("72187")
-# Returns: "72/72187"
 }
 
 }

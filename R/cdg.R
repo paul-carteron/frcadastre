@@ -79,9 +79,9 @@ get_base_data_url <- function(site) {
 #' @keywords internal
 #'
 construct_data_url <- function(site,
-                                commune,
-                                millesime = "latest",
-                                format = NULL) {
+                               commune,
+                               millesime = "latest",
+                               format = NULL) {
 
   # Validate site
   site <- match.arg(site, c("pci", "etalab"))
@@ -108,7 +108,7 @@ construct_data_url <- function(site,
   base <- get_base_data_url(site)
 
   # Construct commune path
-  commune <- construct_data_url(commune)
+  commune <- construct_commune(commune)
 
   # Construct URLs (vectorized)
   file.path(base, millesime, format, scale, commune)
@@ -125,14 +125,14 @@ construct_data_url <- function(site,
 #'
 #' @examples
 #' \dontrun{
-#' construct_data_url("72187")
+#' construct_commune("72187")
 #' # Returns: "72/72187"
 #' }
 #'
 #' @keywords internal
 #'
-construct_data_url <- function(commune) {
-  stopifnot(is.character(commune), nchar(commune) == 5)
+construct_commune <- function(commune) {
+  insee_check(commune, scale_as_return = FALSE, verbose = FALSE)
 
   dep <- substr(commune, 1, ifelse(substr(commune, 1, 2) == "97", 3, 2))
   file.path(dep, commune)

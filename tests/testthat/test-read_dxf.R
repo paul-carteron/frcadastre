@@ -1,6 +1,3 @@
-library(testthat)
-library(rcadastre)
-
 test_that("read_dxf() reads DXF files correctly", {
   # path to DXF files
   dxf1 <- system.file("extdata/1870000A02.DXF", package = "rcadastre")

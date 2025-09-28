@@ -1,6 +1,3 @@
-library(testthat)
-library(rcadastre)
-
 test_that("read_geojson_file() reads gzipped GeoJSON correctly", {
   # Paths to the gzipped GeoJSON files in extdata
   geojson1 <- system.file("extdata/pci-72181-commune.json.gz", package = "rcadastre")

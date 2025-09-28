@@ -1,6 +1,3 @@
-library(testthat)
-library(rcadastre)
-
 test_that("construct_data_url returns correct URLs for PCI", {
   url <- construct_data_url("pci", "72187", millesime = "latest", format = "edigeo")
   expect_match(url, "^https://cadastre.data.gouv.fr/data/dgfip-pci-vecteur/latest/edigeo/feuilles/72/72187$")

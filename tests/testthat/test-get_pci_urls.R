@@ -1,5 +1,20 @@
-library(testthat)
-library(rcadastre)
+test_that("get_pci_urls() works online with real commune code [httptest2]", {
+  skip_if_not_installed("httptest2")
+
+  # Enregistre la requête la première fois, puis rejoue hors-ligne
+  httptest2::with_mock_dir("get_pci_urls_commune", {
+    urls <- get_pci_urls("72187", millesime = "latest", format = "edigeo")
+
+    # All should be tar.bz2 files
+    expect_true(all(grepl("\\.tar\\.bz2$", urls)))
+
+    # Should be absolute URLs starting with cadastre.data.gouv.fr
+    expect_true(all(grepl("^https://cadastre\\.data\\.gouv\\.fr/", urls)))
+
+    # At least one feuille should be returned
+    expect_gt(length(urls), 0)
+  })
+})
 
 test_that("get_pci_urls() works online with real commune code", {
   skip_on_cran()
@@ -29,7 +44,6 @@ test_that("get_pci_urls() works offline with mocked detect_urls", {
     {
       urls <- get_pci_urls("72187", millesime = "latest", format = "edigeo")
 
-      # Should return full URLs with our fake prefix
       expect_true(all(grepl("^https://fake/", urls)))
       expect_true(all(grepl("\\.tar\\.bz2$", urls)))
       expect_equal(basename(urls), fake_links)

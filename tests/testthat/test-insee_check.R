@@ -1,6 +1,3 @@
-library(testthat)
-library(rcadastre)
-
 test_that("insee_check validates communes correctly", {
   # Commune code known in rcadastre::commune_2025
   expect_invisible(insee_check("72187", scale_as_return = FALSE, verbose = FALSE))

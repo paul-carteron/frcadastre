@@ -1,6 +1,3 @@
-library(testthat)
-library(rcadastre)
-
 test_that("read_edigeo() reads THF files correctly", {
   # path to EDIGEO files
   thf1 <- system.file("extdata/E0000A02.THF", package = "rcadastre")

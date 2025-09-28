@@ -1,6 +1,3 @@
-library(testthat)
-library(rcadastre)
-
 test_that("detect_urls works on dgfip-pci-vecteur page", {
   skip_on_cran()
   skip_if_offline("cadastre.data.gouv.fr")

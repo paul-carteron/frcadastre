@@ -1,16 +1,13 @@
-library(testthat)
-library(rcadastre)
+test_that("get_pci_feuilles() retrieves sheets for a real commune [httptest2]", {
+  skip_if_not_installed("httptest2")
 
-test_that("get_pci_feuilles() works online for a real commune", {
-  skip_if_offline("cadastre.data.gouv.fr")
+  httptest2::with_mock_dir("get_pci_feuilles", {
+    feuilles <- get_pci_feuilles("72187", millesime = "latest", format = "edigeo", absolute = FALSE)
 
-  # 72187 example
-  feuilles <- get_pci_feuilles("72187", millesime = "latest", format = "edigeo", absolute = FALSE)
-
-  expect_type(feuilles, "character")
-  expect_true(length(feuilles) > 0)
-  # Sheets must be IDU without extension if absolute = TRUE
-  expect_false(any(grepl("\\.tar\\.bz2$", feuilles)))
+    expect_type(feuilles, "character")
+    expect_true(length(feuilles) > 0)
+    expect_false(any(grepl("\\.tar\\.bz2$", feuilles)))
+  })
 })
 
 test_that("get_pci_feuilles() works offline with mocked detect_urls", {
@@ -22,10 +19,7 @@ test_that("get_pci_feuilles() works offline with mocked detect_urls", {
       feuilles_abs <- get_pci_feuilles("72187", absolute = TRUE)
       feuilles_rel <- get_pci_feuilles("72187", absolute = FALSE)
 
-      # Absolute should keep tarballs
       expect_true(all(grepl("\\.tar\\.bz2$", feuilles_abs)))
-
-      # Relative should clean names
       expect_equal(feuilles_rel, c("721870000A01", "721870000B02"))
     }
   )

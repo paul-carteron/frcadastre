@@ -1,13 +1,9 @@
-library(testthat)
-library(rcadastre)
-
-# Offline test: mock URLs and downloads
 test_that("get_pci_data() works offline with mocked download and read functions", {
-  # Mock URLs that would normally be returned
+  # Fake URLs
   fake_urls <- c("https://fake/edigeo-721870000A01.tar.bz2",
                  "https://fake/edigeo-721870000C05.tar.bz2")
 
-  # Mock download_archives to just return a temp directory with our extdata
+  # Temp extract path with fake DXF files from extdata
   temp_dir <- tempdir()
   fake_extract_path <- file.path(temp_dir, "extdata")
   dir.create(fake_extract_path, showWarnings = FALSE)
@@ -16,27 +12,28 @@ test_that("get_pci_data() works offline with mocked download and read functions"
   file.copy(system.file("extdata/1870000C05.DXF", package = "rcadastre"),
             fake_extract_path, overwrite = TRUE)
 
-  # Mock functions
+  # Mock everything to return our fake paths
   with_mocked_bindings(
     get_pci_urls = function(x, millesime, format) fake_urls,
     download_archives = function(urls, destfiles, extract_dir, use_subdirs, verbose) list(fake_extract_path),
     {
-      # Test DXF format
       sf_data <- get_pci_data("72187", format = "dxf", extract_dir = temp_dir, verbose = FALSE)
-      expect_true(inherits(sf_data, "sf") || is.list(sf_data)) # returns sf or list of sf
+      expect_true(inherits(sf_data, "sf") || is.list(sf_data))
     }
   )
 })
 
-test_that("get_pci_data() works online with real PCI data", {
-  skip_on_cran() # skip on CRAN to avoid large downloads
+test_that("get_pci_data() works online with real PCI data [httptest2]", {
+  skip_if_not_installed("httptest2")
 
-  # 1. Download all sheets for a single commune
-  pci_commune <- get_pci_data("72187", format = "dxf", verbose = FALSE)
-  expect_true(inherits(pci_commune, "sf"))
+  httptest2::with_mock_dir("get_pci_data", {
+    # Commune code
+    pci_commune <- get_pci_data("72187", format = "dxf", verbose = FALSE)
+    expect_true(inherits(pci_commune, "sf"))
 
-  # 2. Download a specific sheet
-  pci_sheet <- get_pci_data("72181000AB01", format = "edigeo", verbose = FALSE)
-  expect_true(is.list(pci_sheet))
-  expect_true(all(sapply(pci_sheet, inherits, "sf")))
+    # Sheet code
+    pci_sheet <- get_pci_data("72181000AB01", format = "edigeo", verbose = FALSE)
+    expect_true(is.list(pci_sheet))
+    expect_true(all(sapply(pci_sheet, inherits, "sf")))
+  })
 })

@@ -1,6 +1,3 @@
-library(testthat)
-library(rcadastre)
-
 test_that("get_data_millesimes() rejects invalid site arguments", {
   expect_error(get_data_millesimes("invalid"), "should be one of")
 })

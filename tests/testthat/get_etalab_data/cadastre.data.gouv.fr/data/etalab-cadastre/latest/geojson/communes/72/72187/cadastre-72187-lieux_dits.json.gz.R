@@ -1,0 +1,10 @@
+structure(list(method = "GET", url = "https://cadastre.data.gouv.fr/data/etalab-cadastre/latest/geojson/communes/72/72187/cadastre-72187-lieux_dits.json.gz", 
+    status_code = 200L, headers = structure(list(server = "nginx/1.10.3 (Ubuntu)", 
+        date = "Sun, 28 Sep 2025 15:26:07 GMT", `content-type` = "application/octet-stream", 
+        `content-length` = "38896", `last-modified` = "Wed, 24 Sep 2025 01:33:36 GMT", 
+        etag = "\"68d34a70-97f0\"", `access-control-allow-origin` = "*", 
+        `accept-ranges` = "bytes"), class = "httr2_headers"), 
+    body = structure(find_mock_file("cadastre.data.gouv.fr/data/etalab-cadastre/latest/geojson/communes/72/72187/cadastre-72187-lieux_dits.json.gz.R-FILE"), 
+        class = "httr2_path"), timing = c(redirect = 0, namelookup = 0, 
+    connect = 0, pretransfer = 3e-04, starttransfer = 0.180532, 
+    total = 0.182652), cache = new.env(parent = emptyenv())), class = "httr2_response")

@@ -1,6 +1,3 @@
-library(testthat)
-library(rcadastre)
-
 test_that("construct_commune returns correct path for a single commune", {
   result <- construct_commune("72187")
   expect_equal(result, file.path("72", "72187"))

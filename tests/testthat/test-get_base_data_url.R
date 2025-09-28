@@ -1,6 +1,3 @@
-library(testthat)
-library(rcadastre)
-
 test_that("get_base_data_url returns correct URLs", {
   # Test for 'pci'
   expect_equal(

@@ -28,3 +28,4 @@ corresponding region, department, and/or commune names.
 # idu_get_name(c("12345ABCDE6789", "54321ZZZZZ1234"), loc = "both")
 
 }
+\keyword{internal}

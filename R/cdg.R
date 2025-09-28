@@ -1,458 +1,286 @@
 ### URL section ----
-#' Aggregate URL Components into a Single URL
+#' Get the Base Data URL for cadastre.data.gouv
 #'
-#' This function concatenates a base URL with one or more relative URL components
-#' into a single complete URL string.
+#' This function returns the base URL for a given cadastre.data.gouv site.
 #'
-#' @param urls `character`. Vector of relative URL components to append.
-#' @param base_url `character`. String representing the base URL.
+#' @param site `character`. The cadastre site to use. Must be one of `"pci"` or `"etalab"`.
 #'
-#' @return A single `character` string containing the complete aggregated URL.
+#' @return A single character string representing the base URL for the requested site.
 #'
 #' @details
-#' The components are concatenated with ``"/"`` as separator, starting with the ``base_url``.
+#' The function maps the site names "pci" and "etalab" to their corresponding
+#' dataset directories on the cadastre.data.gouv portal:
 #'
-#' @seealso [pci_get_feuille_urls()]
+#' - "pci" -> "dgfip-pci-vecteur"
+#' - "etalab" -> "etalab-cadastre"
 #'
-#' @examples
-#' cdg_aggr_url(c("folder", "file.zip"), "https://example.com")
-#' # Returns: "https://example.com/folder/file.zip"
-#'
-#' @export
-#'
-cdg_aggr_url <- function(urls, base_url){
-  urls_clean <- urls[!sapply(urls, is.null)]
-  paste(c(base_url, urls), collapse = "/")
-}
-
-#' Construct a Data Download URL
-#'
-#' Builds a URL for downloading data from a specified site, format, scale,
-#' and optionally a specific "millesime" (data version).
-#'
-#' @param site `character`. Site identifier. Must be one of `allowed_sites`.
-#' @param format `character`. Data format. Must be one of `allowed_formats`.
-#' @param scale `character`. Data scale. Must be one of `allowed_scales`.
-#' @param millesime `character` or `NULL`. The desired data version.
-#'   If `NULL`, the most recent millesime is used.
-#' @param allowed_sites `character`. Vector of allowed site identifiers.
-#'   Defaults to `c("pci", "etalab")`.
-#' @param allowed_formats `character`. Vector of allowed formats.
-#' @param allowed_scales `character`. Vector of allowed scales.
-#' @param ... Additional arguments passed to \code{\link{cdg_detect_millesimes}}.
-#'
-#' @return A `character` string representing the full download URL.
-#'
-#' @details
-#' - The format `"shp"` is not available for the `"communes"` scale.
-#' - The `millesime` parameter can be set explicitly, or defaults to the
-#'   latest available.
-#'
-#' @seealso [cdg_detect_millesimes(), cdg_aggr_url(), cdg_get_path()]
+#' It then returns the complete URL starting with "https://cadastre.data.gouv.fr/data/".
 #'
 #' @examples
 #' \dontrun{
-#' cdg_construct_url(
-#'   site = "pci",
-#'   format = "gpkg",
-#'   scale = "departements",
-#'   allowed_formats = c("gpkg", "shp"),
-#'   allowed_scales = c("communes", "departements")
-#' )
+#' get_base_data_url("pci")
+#' # Returns: "https://cadastre.data.gouv.fr/data/dgfip-pci-vecteur"
+#'
+#' get_base_data_url("etalab")
+#' # Returns: "https://cadastre.data.gouv.fr/data/etalab-cadastre"
 #' }
 #'
-#' @export
+#' @keywords internal
 #'
-cdg_construct_url <- function(site,
-                              format,
-                              scale,
-                              millesime = NULL,
-                              allowed_sites = c("pci", "etalab"),
-                              allowed_formats,
-                              allowed_scales) {
+get_base_data_url <- function(site) {
+  site <- match.arg(site, c("pci", "etalab"))
 
-  # Validate inputs
-  site <- match.arg(site, allowed_sites)
-  format <- match.arg(format, allowed_formats)
-  scale <- match.arg(scale, allowed_scales)
+  mapping <- c(
+    pci    = "dgfip-pci-vecteur",
+    etalab = "etalab-cadastre"
+  )
 
-  # Specific rule: 'shp' not available for 'communes'
-  if (format == "shp" && scale == "communes") {
-    stop("The format 'shp' is not available for the 'communes' scale.")
-  }
-
-  # Default millesime = latest available
-  if (is.null(millesime)) {
-    millesimes <- cdg_detect_millesimes(site, allowed_sites)
-    millesime <- tail(millesimes, 1)
-  }
-
-  urls <- c(millesime, format, scale)
-  cdg_aggr_url(urls, base_url = cdg_get_path(site))
+  sprintf("https://cadastre.data.gouv.fr/data/%s", mapping[site])
 }
 
-#' Construct a Commune Path String
+#' Construct the Full Data URL for cadastre.data.gouv
+#'
+#' This function builds the complete URL to access cadastre data for a given cadastre.data.gouv site,
+#' commune, and millesime. The function handles default formats and scales for each site.
+#'
+#' @param site `character`. The cadastre site to use. Must be one of `"pci"` or `"etalab"`.
+#' @param commune `character` vector. The INSEE code(s) of the commune(s).
+#' @param millesime `character`. The version or millesime of the dataset.
+#' Must be on of `get_data_millesimes("pci")`. Default is `"latest"`.
+#' @param format `character`. Optional. The format of the data.
+#' For "pci", must be `"edigeo"` or `"dxf"`.
+#' For "etalab", the default is "geojson".
+#'
+#' @return A character vector of full URLs for the requested site, commune(s), and millesime.
+#'
+#' @details
+#' The function validates the site and commune codes.
+#' Default scales and formats are:
+#'
+#' - "pci": scale = "feuilles", format = "edigeo" or "dxf"
+#' - "etalab": scale = "communes", format = "geojson"
+#'
+#' The returned URLs are constructed as:
+#' \code{base_url / millesime / format / scale / commune}
+#'
+#' @seealso [get_data_millesimes()]
+#'
+#' @examples
+#' \dontrun{
+#' # PCI data for commune "72187"
+#' construct_data_url("pci", 72187)
+#' # Returns: "https://cadastre.data.gouv.fr/data/dgfip-pci-vecteur/latest/edigeo/feuilles/72/72187"
+#'
+#' # Etalab data for commune "72187"
+#' construct_data_url("etalab", "72187")
+#' # Returns: "https://cadastre.data.gouv.fr/data/etalab-cadastre/latest/geojson/communes/72/72187"
+#' }
+#'
+#' @keywords internal
+#'
+construct_data_url <- function(site,
+                               commune,
+                               millesime = "latest",
+                               format = NULL) {
+
+  # Validate site
+  site <- match.arg(site, c("pci", "etalab"))
+
+  # Validate commune codes
+  commune <- as.character(commune)
+  if (!all(commune %in% rcadastre::commune_2025$COM)) {
+    stop("Some commune codes are invalid.")
+  }
+
+  # Determine millesime
+  millesime <- match.arg(millesime, get_data_millesimes("pci"))
+
+  # Default formats and scales
+  if (site == "pci") {
+    scale  <- "feuilles"
+    format <- match.arg(format, c("edigeo", "dxf"))
+  } else if (site == "etalab") {
+    scale  <- "communes"
+    format <- "geojson"
+  }
+
+  # Base URL
+  base <- get_base_data_url(site)
+
+  # Construct commune path
+  commune <- construct_commune(commune)
+
+  # Construct URLs (vectorized)
+  file.path(base, millesime, format, scale, commune)
+}
+
+#' Construct a commune path string
 #'
 #' Constructs a path string for a given commune code by prepending
 #' the department code (first two characters) and joining them with a slash.
 #'
-#' @param commune `character`.
-#' A commune code, typically a string where the first two characters represent the department code.
+#' @param commune `character` vector. The INSEE code(s) of the commune(s).
 #'
 #' @return A `character` string combining department and commune codes separated by a slash.
 #'
 #' @examples
-#' cdg_construct_commune("75056")
-#' # Returns "75/75056"
+#' \dontrun{
+#' construct_commune("72187")
+#' # Returns: "72/72187"
+#' }
 #'
-#' @export
+#' @keywords internal
 #'
-cdg_construct_commune <- function(commune){
-  dep <- substr(commune, 1, 2)
-  paste(c(dep, commune), collapse = "/")
+construct_commune <- function(commune) {
+  insee_check(commune, scale_as_return = FALSE, verbose = FALSE)
+
+  dep <- substr(commune, 1, ifelse(substr(commune, 1, 2) == "97", 3, 2))
+  file.path(dep, commune)
 }
 
 ### Milesime section ----
-#' Detect and Extract Links from a Webpage
+#' Detect and Extract URLs from a Web Page
 #'
-#' Reads the content of a webpage from a given URL and extracts all unique hyperlinks (href attributes).
+#' This function scans one or more web pages for hyperlinks (`<a href=...>`)
+#' and extracts their URLs, either as absolute or relative paths.
 #'
-#' @param url `character`.
-#' String specifying the URL of the webpage to scan.
+#' @param url `character`. One or more base URLs to scan.
+#' @param absolute `logical`. Default is `"TRUE"`.
+#' If `TRUE` (default), returned links are converted to absolute URLs.
+#' If `FALSE`, relative paths are preserved.
 #'
-#' @return A `character` vector of unique URLs found in the href attributes on the page,
-#'         excluding relative parent directory links ("../") and empty links.
+#' @return A character vector of detected URLs.
 #'
 #' @details
-#' This function reads the raw HTML content of the specified URL and uses regular expressions
-#' to extract all href attribute values. It filters out parent directory references and empty strings.
-#'
-#' @seealso [cdg_aggr_url(), pci_get_feuille_urls()]
+#' All `<a href>` attributes found in the HTML content of the provided `urls`
+#' are returned, excluding parent directory links (`"../"`) and empty values.
+#' If `absolute = TRUE`, URLs are normalized relative to the input base.
 #'
 #' @examples
 #' \dontrun{
-#' links <- cdg_detect_links("https://example.com")
+#' links <- detect_urls(construct_data_url("etalab", "72187"))
 #' print(links)
 #' }
 #'
-#' @export
+#' @importFrom httr2 request req_perform resp_body_html
+#' @importFrom xml2 xml_find_all xml_attr url_absolute
 #'
-cdg_detect_links <- function(url) {
-  # Try reading the page, handle errors
-  page <- tryCatch({
-    readLines(url, warn = FALSE)
-  }, error = function(e) {
-    stop("Error while retrieving the page: ", e$message)
-  })
+#' @keywords internal
+#'
+detect_urls <- function(url, absolute = TRUE) {
+  detect_one <- function(url) {
+    page <- request(url) |>
+      req_perform() |>
+      resp_body_html()
 
-  # Extract all href attributes
-  links <- regmatches(page, gregexpr('href="[^"]+"', page))
-  links <- unlist(links)
+    links <- xml_find_all(page, ".//a[@href]") |> xml_attr("href")
+    links <- links[!is.na(links) & links != "../" & nzchar(links)]
 
-  # Clean to keep only the URL inside href
-  links <- sub('href="([^"]+)"', '\\1', links)
+    if (absolute) {
+      # Ensure the base ends with the commune folder
+      base <- paste0(url, "/")  # add trailing slash
+      links <- url_absolute(links, base = base)
+    } else {
+      links <- sub("/$", "", links)
+    }
 
-  # Remove "../" and empty links
-  links <- links[links != "../" & nzchar(links)]
+    unique(links)
+  }
 
-  # Return unique links
-  unique(links)
+  unlist(lapply(url, detect_one), use.names = FALSE)
 }
 
 #' Detect available years (millesimes)
 #'
 #' Retrieves and returns the list of available "millesimes" (year directories) from a specified data site.
 #'
-#' @param site `character`.
-#' String indicating the data site to query. Must be one of `"pci"` or `"etalab"`.
-#' @param allowed_sites `character`.
-#' Vector of allowed site names. Defaults to `c("pci", "etalab")`.
+#' @param site `character`. The cadastre site to use. Must be one of `"pci"` or `"etalab"`.
 #'
 #' @return A `character` vector of unique year identifiers (millesimes) found on the site.
 #'
 #' @details
-#' This function uses `cdg_get_path` to get the base URL for the site,
-#' then calls `cdg_detect_links` to list all hyperlinks on the site,
-#' filters those that represent directories (ending with a slash),
-#' and returns the unique directory names without the trailing slash.
-#'
-#' @seealso [cdg_detect_links(), cdg_get_path()]
+#' The function queries the base data URL for the specified site and extracts
+#' the list of available millésime directories.
 #'
 #' @examples
 #' \dontrun{
-#' years <- cdg_detect_millesimes("pci")
+#' years <- list(pci = get_data_millesimes("pci"), etalab = get_data_millesimes("etalab"))
 #' print(years)
 #' }
 #'
 #' @export
 #'
-cdg_detect_millesimes <- function(site,
-                                  allowed_sites = c("pci", "etalab")) {
-
-  site <- match.arg(site, allowed_sites)
-  url <- cdg_get_path(site)
-
-  # Retrieve all links with cdg_detect_links()
-  links <- cdg_detect_links(url)
-
-  # Keep only those ending with a slash (directories)
-  millesimes <- links[grepl("/$", links)]
-
-  # Remove trailing slash
-  millesimes <- sub("/$", "", millesimes)
-
-  # Return unique values
-  unique(millesimes)
-}
-
-#' Choose available years (millesimes)
-#'
-#' Allows the user to select a specific "millesime" (data year version) for a given site.
-#' If no millesime is specified, the function defaults to `"latest"`.
-#'
-#' @param site `character`.
-#' String specifying the data site. Passed to \code{\link{cdg_detect_millesimes}}.
-#' @param millesime `character`.
-#' Specifying the desired millesime:
-#'   - `NULL` returns `"latest"`.
-#'   - `"?"` opens an interactive menu to choose from available millesimes.
-#'   - otherwise, checks if the provided millesime exists.
-#' @param ... Additional arguments passed to \code{\link{cdg_detect_millesimes}}.
-#'
-#' @return A `character` string representing the chosen millesime, or `"latest"` if not found or canceled.
-#'
-#' @details
-#' - If `millesime` is `"?"`, the user is prompted with an interactive selection menu.
-#' - If the chosen millesime is not available, a warning is issued and `"latest"` is returned.
-#'
-#' @seealso
-#' \code{\link{cdg_detect_millesimes}}
-#'
-#' @examples
-#' \dontrun{
-#' cdg_choose_millesime("pci")
-#' cdg_choose_millesime("pci", "?")
-#' cdg_choose_millesime("pci", "2023")
-#' }
-#'
-#' @export
-cdg_choose_millesime <- function(site,
-                                 millesime = NULL, ...) {
-
-  # Retrieve available millesimes
-  millesimes <- cdg_detect_millesimes(site, ...)
-
-  # Default value
-  default <- "latest"
-
-  # If no millesime provided, return default
-  if (is.null(millesime)) {
-    return(default)
-  }
-
-  # Interactive choice menu
-  if (identical(millesime, "?")) {
-    cat("Available millesimes:\n")
-    choice <- utils::menu(millesimes, title = "Choose a millesime")
-    if (choice == 0) {
-      return(default)  # cancellation returns "latest"
-    } else {
-      return(millesimes[choice])
-    }
-  }
-
-  # Check if millesime exists
-  if (!millesime %in% millesimes) {
-    warning(sprintf("Millesime '%s' not found, using '%s'", millesime, default))
-    return(default)
-  }
-
-  # Return requested millesime
-  return(millesime)
-}
-
-### Download section ----
-#' Download and optionally extract an archive from a URL
-#'
-#' Downloads a file from the specified `url` to a destination file.
-#' The function first checks that the URL is reachable. If the download is successful,
-#' archives are automatically extracted based on their file extension (`.gz` or other formats
-#' supported by `archive::archive_extract`).
-#' Messages and warnings can be controlled via the `verbose` parameter.
-#'
-#' @param url `character`. URL of the archive to download.
-#' @param destfile `character`. Optional path to save the downloaded file.
-#'   If `NULL`, a temporary file with the same name as the archive is created.
-#' @param extract_dir `character`. Directory where the archive will be extracted.
-#'   If `NULL`, a temporary directory is created.
-#' @param overwrite `logical`. Default is `FALSE`. Whether to overwrite the destination file if it already exists.
-#' @param verbose `logical`. Default is `TRUE`. Whether to display messages during download and extraction.
-#'
-#' @return If the download and extraction succeed, returns the path to the extraction directory.
-#'   Otherwise, returns `NULL`.
-#'
-#' @seealso [archive::archive_extract()], [archive::archive()]
-#'
-#' @importFrom httr2 request req_perform req_method req_timeout
-#' @importFrom archive archive_extract
-#'
-#' @export
-#'
-cdg_download_archive <- function(url,
-                                 destfile = NULL,
-                                 extract_dir = NULL,
-                                 overwrite = FALSE,
-                                 verbose = TRUE) {
-
-  .msg <- function(...) if (isTRUE(verbose)) message(...)
-  .war <- function(...) if (isTRUE(verbose)) warning(..., call. = FALSE)
-
-  # Test existing url
-  if (!.url_exists(url)) {
-    .war(sprintf("URL not reachable: %s", url))
-    return(NULL)
-  }
-
-  if (is.null(destfile)) destfile <- tempfile(basename(url))
-  if (is.null(extract_dir)) extract_dir <- tempdir()
-
-  # Download url
-  ok <- tryCatch({
-    if (!file.exists(destfile) || overwrite) {
-      httr2::request(url) |> httr2::req_perform(path = destfile)
-    }
-    TRUE
-  }, error = function(e) {
-    .war(sprintf("Download failed: %s", conditionMessage(e)))
-    FALSE
-  })
-  if (!ok) return(NULL)
-
-  # Extraction according extent
-  filename <- basename(destfile)
-  ext <- tolower(sub(".*\\.([^.]+)$", "\\1", filename))
-  sub_extract_dir <- extract_dir
-
-  if (ext == "gz") {
-    out_file <- file.path(sub_extract_dir, sub("\\.gz$", "", filename))
-    ok <- tryCatch({
-      con_in <- gzfile(destfile, "rb")
-      con_out <- file(out_file, "wb")
-      while (length(buf <- readBin(con_in, what = raw(), n = 65536)) > 0) {
-        writeBin(buf, con_out)
-      }
-      close(con_in); close(con_out)
-      TRUE
-    }, error = function(e) {
-      .war(sprintf("Decompression failed: %s", conditionMessage(e)))
-      FALSE
-    })
-    if (ok) .msg(sprintf("File '%s' downloaded and decompressed", filename))
-
-  } else {
-    ok <- tryCatch({
-      archive::archive_extract(destfile, dir = sub_extract_dir)
-      TRUE
-    }, error = function(e) {
-      .war(sprintf("Extraction failed: %s", conditionMessage(e)))
-      FALSE
-    })
-    if (ok) .msg(sprintf("File '%s' downloaded and extracted", filename))
-  }
-
-  if (ok) return(sub_extract_dir)
-  else return(NULL)
-}
-
-
-#' Download multiple archives and optionally extract them
-#'
-#' Downloads multiple archives from the given `urls`.
-#'
-#' @param urls `character`. Vector of URLs to download.
-#' @param destfiles `character`. Optional vector of file paths to save the downloaded files.
-#'   If `NULL`, temporary files are created. Must have the same length as `urls`.
-#' @param extract_dir `character`. Directory where archives will be extracted.
-#'   If `NULL`, a temporary directory is created.
-#' @param use_subdirs `logical`. Default `FALSE`. If `TRUE`, each archive is extracted into
-#'   its own subdirectory within `extract_dir`.
-#' @param ... Additional arguments passed to `cdg_download_archive()`.
-#'
-#' @return A list of extraction directories used for each archive.
-#'
-#' @seealso [cdg_download_archive()]
-#'
-#' @export
-#'
-cdg_download_archives <- function(urls,
-                                  destfiles = NULL,
-                                  extract_dir = NULL,
-                                  use_subdirs = FALSE,
-                                  ...) {
-  n <- length(urls)
-  if (is.null(destfiles)) destfiles <- rep(NA_character_, n)
-  if (is.null(extract_dir)) extract_dir <- tempdir()
-
-  results <- vector("list", n)
-  for (i in seq_along(urls)) {
-    sub_dir <- if (use_subdirs) file.path(extract_dir, paste0("archive_", i)) else extract_dir
-    if (use_subdirs && !dir.exists(sub_dir)) dir.create(sub_dir, recursive = TRUE)
-
-    results[[i]] <- cdg_download_archive(
-      url = urls[i],
-      destfile = if (!is.na(destfiles[i])) destfiles[i] else NULL,
-      extract_dir = sub_dir,
-      ...
-    )
-  }
-  results
+get_data_millesimes <- function(site) {
+  site <- match.arg(site, c("pci", "etalab"))
+  detect_urls(get_base_data_url(site), FALSE)
 }
 
 ### INSEE code section ----
 #' Detect and validate INSEE code (city or department)
 #'
-#' Checks if the provided INSEE code is valid among communes or departements,
-#' optionally returning the scale ("communes" or "departements").
+#' Checks if the provided INSEE code(s) are valid among communes or departments.
+#' Optionally returns the administrative scale ("communes" or "departements") for each code.
 #'
-#' @param insee_code `character` or `numeric`.
-#' INSEE code to validate.
-#' @param scale `logical`.
-#' If `TRUE`, return the detected scale ("communes" or "departements").
-#' @param verbose `logical`.
-#' If `TRUE`, print informative messages.
+#' @param x `character` or `numeric`. Vector of INSEE codes to validate.
+#' @param scale_as_return `logical`. If `TRUE`, returns a character vector indicating
+#' the detected scale ("communes" or "departements") for each code.
+#' @param verbose `logical`. If `TRUE`, prints informative messages for each code.
 #'
-#' @return If `scale = TRUE`, returns the detected scale as a character string.
-#' Otherwise, returns nothing but throws an error if invalid.
+#' @return If `scale_as_return = TRUE`, a character vector of length `length(x)` with
+#' values `"communes"` or `"departements"`. If `scale_as_return = FALSE`, returns
+#' invisibly `NULL`.
+#'
+#' @details
+#' The function accepts either 5-character INSEE codes for communes or 2-3 character
+#' codes for departments. Invalid codes trigger an error.
+#'
+#' @examples
+#' \dontrun{
+#' # Validate a single commune
+#' insee_check(72187)
+#' # Returns: Commune '72187' = 'Marigné-Laillé' selected
+#' insee_check(72187, TRUE)
+#' # Returns: "communes"
+#'
+#' # Validate multiple codes and return scale
+#' insee_check(c(72, 72187, 72187))
+#' # Returns:
+#' # Department '72' = 'Sarthe' selected
+#' # Commune '72187' = 'Marigné-Laillé' selected
+#' # Commune '72187' = 'Marigné-Laillé' selected
+#' }
 #'
 #' @export
 #'
-cdg_detect_insee_code <- function(insee_code, scale = FALSE, verbose = TRUE) {
-  insee_code <- as.character(insee_code)
-  communes <- rcadastre::commune_2025
+insee_check <- function(x, scale_as_return = FALSE, verbose = TRUE) {
+  x <- as.character(x)
+  communes    <- rcadastre::commune_2025
   departements <- rcadastre::departement_2025
 
-  if (nchar(insee_code) == 5) {
-    if (!(insee_code %in% communes$COM)) {
-      stop(sprintf("Erreur : City '%s' not find. Please run rcadastre::commune_2025",
-                   insee_code))
+  scales_detected <- character(length(x))
+
+  for (i in seq_along(x)) {
+    code <- x[i]
+
+    if (nchar(code) == 5) {
+      # Commune
+      idx <- which(communes$COM == code)
+      if (length(idx) == 0) stop(sprintf("Commune '%s' not found. Run rcadastre::commune_2025", code))
+      log_msg(verbose, sprintf("Commune '%s' = '%s' selected", code, communes$NCCENR[idx]))
+      if (scale_as_return) scales_detected[i] <- "communes"
+
+    } else if (nchar(code) %in% c(2,3)) {
+      # Département
+      idx <- which(departements$DEP == code)
+      if (length(idx) == 0) stop(sprintf("Department '%s' not found. Run rcadastre::departement_2025", code))
+      log_msg(verbose, sprintf("Department '%s' = '%s' selected", code, departements$LIBELLE[idx]))
+      if (scale_as_return) scales_detected[i] <- "departements"
+
     } else {
-      if (verbose){message(sprintf("City '%s' = '%s' selected",
-                                   insee_code,
-                                   communes[communes$COM == insee_code, "NCCENR"]))}
-      if (scale){scale_detected <- "communes"}
-    }
-  } else if (nchar(insee_code) == 2 | nchar(insee_code) == 3) {
-    if (!(insee_code %in% departements$DEP)) {
-      stop(sprintf("Erreur : department '%s' not find. Please run Rsequoia2::departement_2025",
-                   insee_code))
-    } else {
-      if (verbose){message(sprintf("Department '%s' = '%s' selected",
-                                   insee_code,
-                                   departements[departements$DEP == insee_code, "LIBELLE"]))}
-      if (scale){scale_detected <- "departements"}
+      stop(sprintf("Invalid code '%s'. Must be a 5-char commune or 2-3 char department.", code))
     }
   }
-  if (scale){return(scale_detected)}
+
+  if (scale_as_return) return(scales_detected)
+  invisible(NULL)
 }
-
-

@@ -39,7 +39,7 @@ devtools::install_github("mucau/rcadastre")
 The package covers several workflows:
 
 Etalab data: download and read datasets provided by Etalab
-(`get_etalab_data()`, `get_etalab_bundle()`).
+(`get_etalab_data()`, `get_etalab()`).
 
 PCI data: access and manage cadastral PCI data
 (`get_pci_data()`).

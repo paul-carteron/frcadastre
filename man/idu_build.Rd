@@ -2,33 +2,60 @@
 % Please edit documentation in R/idu.R
 \name{idu_build}
 \alias{idu_build}
-\title{Build a Unique ID (IDU) for a Parcel}
+\title{Build a unique parcel identifier (IDU)}
 \usage{
-idu_build(dep = NULL, com, prefix = "0", section, numero)
+idu_build(dep = NULL, com, prefix, section, numero)
 }
 \arguments{
-\item{dep}{\code{character} or \code{NULL} Department code (optional).}
+\item{dep}{\code{character} or \code{NULL}. Department code.
+Must be 2 characters (e.g., \code{"01"}, \code{"95"}, \code{"2A"}, \code{"2B"}),
+or 3 characters for overseas departments (\code{"971"}–\code{"978"}).
+Optional if \code{com} already contains the full 5-character commune code.}
 
-\item{com}{\code{character} Commune code.}
+\item{com}{\code{character}. Commune code.
+\itemize{
+\item If length 5: full INSEE commune code (department already included).
+\item If length 3: commune code within a metropolitan department (requires \code{dep}).
+\item If length 2: commune code within an overseas department (requires \code{dep}).
+}}
 
-\item{prefix}{\code{character} Prefix code (default \code{"0"}).}
+\item{prefix}{\code{character}. Prefix code (3 characters, zero-padded).}
 
-\item{section}{\code{character} Section code.}
+\item{section}{\code{character}. Section code (2 characters, zero-padded, uppercase).}
 
-\item{numero}{\code{character} Parcel number.}
+\item{numero}{\code{character}. Parcel number (4 characters, zero-padded).}
 }
 \value{
-\code{character} A 14-character unique ID (IDU).
+A \code{character} vector of 14-character IDUs.
 }
 \description{
-Constructs a standardized 14-character ID for a parcel based on department, commune, prefix, section, and number.
+Constructs a standardized 14-character IDU (Identifiant parcellaire Unique)
+from department, commune, prefix, section, and parcel number.
 }
 \details{
-Some IDs do not include the department code.
-In such cases, it needs to be specified manually,
-which is why \code{dep} is by defaut set to \code{NULL}
+\itemize{
+\item All input vectors must have the same length.
+\item The function automatically zero-pads and uppercases fields where required.
+\item Input is validated against INSEE commune and department codes.
+}
 }
 \examples{
-idu_build(dep = "01", com = "002", prefix = "0", section = "A", numero = "12")
+\dontrun{
+# With separate department and commune codes
+idu_build(dep = "72", com = "187", prefix = "000", section = "A", numero = "1")
 
+# With commune code including department
+idu_build(com = "72187", prefix = "000", section = "A", numero = "1")
+
+# With a plots dataframe
+parcelle <- get_etalab(72187)
+parcelle$idu <- idu_build(com = parcelle$commune,
+                          prefix=parcelle$prefixe,
+                          section=parcelle$section,
+                          numero=parcelle$numero)
+}
+
+}
+\seealso{
+\code{\link[=insee_check]{insee_check()}}, \code{\link[=idu_check]{idu_check()}}
 }

@@ -24,3 +24,4 @@ idu_get_lieudit(c("12345ABCDE6789", "54321ZZZZZ1234"))
 }
 
 }
+\keyword{internal}

@@ -76,9 +76,27 @@ If you want to access the initial (more complete) raw data, you can use:
 
 You have also sommes utilitary functions to manage IDU for cadastral parcelles.
 
-### Installation
+### Getting start
 
-```installation
+```r
 # Just run
 install_github("mucau/frcadastre")
+
+# To get a commune, just ask with his INSEE code
+commune <- get_etalab(72187, data="communes")
+
+# Continue with parcels ...
+parcels <- get_etalab(72187, data="parcelles")
+
+# And sommes raw data ...
+borne <- get_etalab_data(72187, data="borne")
 ```
+
+### Problems and Issues
+
+- Please report any issues or bugs you may encounter on the [dedicated
+  page on github](https://github.com/mucau/frcadastre/issues).
+
+---
+
+Have fun ! :)

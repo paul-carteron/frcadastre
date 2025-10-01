@@ -7,9 +7,9 @@ test_that("get_pci_data() works offline with mocked download and read functions"
   temp_dir <- tempdir()
   fake_extract_path <- file.path(temp_dir, "extdata")
   dir.create(fake_extract_path, showWarnings = FALSE)
-  file.copy(system.file("extdata/1870000A02.DXF", package = "rcadastre"),
+  file.copy(system.file("extdata/1870000A02.DXF", package = "frcadastre"),
             fake_extract_path, overwrite = TRUE)
-  file.copy(system.file("extdata/1870000C05.DXF", package = "rcadastre"),
+  file.copy(system.file("extdata/1870000C05.DXF", package = "frcadastre"),
             fake_extract_path, overwrite = TRUE)
 
   # Mock everything to return our fake paths

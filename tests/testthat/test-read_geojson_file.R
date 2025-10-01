@@ -1,7 +1,7 @@
 test_that("read_geojson_file() reads gzipped GeoJSON correctly", {
   # Paths to the gzipped GeoJSON files in extdata
-  geojson1 <- system.file("extdata/pci-72181-commune.json.gz", package = "rcadastre")
-  geojson2 <- system.file("extdata/pci-72187-commune.json.gz", package = "rcadastre")
+  geojson1 <- system.file("extdata/pci-72181-commune.json.gz", package = "frcadastre")
+  geojson2 <- system.file("extdata/pci-72187-commune.json.gz", package = "frcadastre")
 
   # Test reading a single GeoJSON file
   geo1 <- read_geojson_file(geojson1)

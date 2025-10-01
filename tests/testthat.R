@@ -7,6 +7,6 @@
 # * https://testthat.r-lib.org/articles/special-files.html
 
 library(testthat)
-library(rcadastre)
+library(frcadastre)
 
-test_check("rcadastre")
+test_check("frcadastre")

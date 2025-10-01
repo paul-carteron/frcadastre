@@ -2,7 +2,7 @@ test_that("get_etalab_data() works offline with mocked dependencies", {
   fake_urls <- c("https://fake/etalab/72187-parcelles.json.gz")
 
   with_mocked_bindings(
-    get_etalab_urls = function(commune, data, millesime) fake_urls,
+    get_etalab_urls = function(commune, data, millesime, verbose = TRUE) fake_urls,
     download_archives = function(urls, destfiles, extract_dir, verbose) {
       # Simulate the creation of a minimal GeoJSON file
       geojson_file <- file.path(extract_dir, "parcelles.json")

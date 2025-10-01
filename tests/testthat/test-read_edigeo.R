@@ -1,7 +1,7 @@
 test_that("read_edigeo() reads THF files correctly", {
   # path to EDIGEO files
-  thf1 <- system.file("extdata/E0000A02.THF", package = "rcadastre")
-  thf2 <- system.file("extdata/E0000C05.THF", package = "rcadastre")
+  thf1 <- system.file("extdata/E0000A02.THF", package = "frcadastre")
+  thf2 <- system.file("extdata/E0000C05.THF", package = "frcadastre")
 
   # Test reading a single file
   sf_list1 <- read_edigeo(dirname(thf1))
@@ -9,7 +9,7 @@ test_that("read_edigeo() reads THF files correctly", {
   expect_true(all(sapply(sf_list1, function(x) inherits(x, "sf"))))
 
   # Test folder read
-  thf_dir <- system.file("extdata", package = "rcadastre")
+  thf_dir <- system.file("extdata", package = "frcadastre")
   sf_list_all <- read_edigeo(thf_dir)
 
   expect_type(sf_list_all, "list")

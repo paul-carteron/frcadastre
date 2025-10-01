@@ -1,5 +1,5 @@
 test_that("insee_check validates communes correctly", {
-  # Commune code known in rcadastre::commune_2025
+  # Commune code known in frcadastre::commune_2025
   expect_invisible(insee_check("72187", scale_as_return = FALSE, verbose = FALSE))
 
   # With scale_as_return = TRUE, should return "communes"
@@ -7,7 +7,7 @@ test_that("insee_check validates communes correctly", {
 })
 
 test_that("insee_check validates departments correctly", {
-  # Department code known in rcadastre::departement_2025
+  # Department code known in frcadastre::departement_2025
   expect_invisible(insee_check("72", scale_as_return = FALSE, verbose = FALSE))
 
   # With scale_as_return = TRUE, should return "departements"

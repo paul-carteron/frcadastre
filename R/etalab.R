@@ -68,7 +68,10 @@ get_etalab_layernames <- function(type = c("raw", "proc")) {
 #'
 check_etalab_data <- function(data, type = c("raw", "proc")) {
   # Match argument
-  type <- match.arg(type, several.ok = TRUE)
+  type <- tryCatch(
+    match.arg(type, several.ok = TRUE),
+    error = function(e) stop("type must be one of 'raw' or 'proc'", call. = FALSE)
+  )
 
   # Get all valid layers for the requested type(s)
   all_layers <- unlist(get_etalab_layernames(type), use.names = FALSE)
@@ -100,6 +103,7 @@ check_etalab_data <- function(data, type = c("raw", "proc")) {
 #' @param data `character` vector or `list`.
 #' If `character`, a vector of layers will be paired with all communes (Cartesian product).
 #' If `list`, each element corresponds to a vector of layers for the matching commune.
+#' @param verbose `logical`. If `TRUE`, prints progress messages.
 #'
 #' @return A `data.frame` with columns:
 #' - `commune`: commune code
@@ -124,8 +128,10 @@ check_etalab_data <- function(data, type = c("raw", "proc")) {
 #'
 #' @keywords internal
 #'
-get_etalab_arg_pairs <- function(commune, data) {
+get_etalab_arg_pairs <- function(commune, data, verbose = TRUE) {
   commune <- as.character(commune)
+  insee_check(commune, verbose = verbose)
+  ensure_is_not_arr(commune)
   if (is.list(data)) {
     if (length(data) != length(commune)) stop("List of data must match commune length.")
     do.call(rbind, lapply(seq_along(commune), \(i) {
@@ -148,6 +154,7 @@ get_etalab_arg_pairs <- function(commune, data) {
 #' If `list`, each element corresponds to a vector of layers for the matching commune.
 #' @param millesime `character`. The version or millesime of the dataset.
 #' Must be on of `get_data_millesimes("etalab")`. Default is `"latest"`.
+#' @param verbose `logical`. If `TRUE`, prints progress messages.
 #'
 #' @return A `character` vector containing unique URLs to the requested Etalab data layers.
 #'
@@ -170,14 +177,15 @@ get_etalab_arg_pairs <- function(commune, data) {
 #'
 #' @keywords internal
 #'
-get_etalab_urls <- function(commune, data, millesime = "latest") {
-  commune <- as.character(commune)
-  insee_check(commune)
-  message("")
+get_etalab_urls <- function(commune,
+                            data,
+                            millesime = "latest",
+                            verbose = TRUE) {
+
   data_flat <- if (is.list(data)) unlist(data, use.names = FALSE) else data
   check_etalab_data(data_flat, type = c("raw", "proc"))
 
-  pairs <- get_etalab_arg_pairs(commune, data)
+  pairs <- get_etalab_arg_pairs(commune, data, verbose = verbose)
   layer_type <- sapply(pairs$layer, \(d) {
     if (d %in% get_etalab_layernames("proc")$proc) return("proc")
     if (d %in% get_etalab_layernames("raw")$raw) return("raw")
@@ -235,7 +243,7 @@ get_etalab_data <- function(commune,
                             verbose = TRUE) {
 
   # 1. Generate URLs
-  urls <- get_etalab_urls(commune, data, millesime)
+  urls <- get_etalab_urls(commune, data, millesime, verbose = verbose)
   if (length(urls) == 0) {
     log_warn(verbose, "No URLs found for the requested layers.")
     return(NULL)
@@ -322,10 +330,10 @@ get_etalab <- function(id, data = "parcelles", verbose = TRUE) {
   )
 
   # 2. Build commune x layer pairs
-  arg_pairs <- get_etalab_arg_pairs(id, data)
+  arg_pairs <- get_etalab_arg_pairs(id, data, verbose = verbose)
 
   # 3. Detect scale for each commune
-  scale <- insee_check(arg_pairs$commune, scale_as_return = TRUE, verbose = verbose)
+  scale <- insee_check(arg_pairs$commune, scale_as_return = TRUE, verbose = FALSE)
   format <- "geojson"
 
   # 4. Build URLs

@@ -413,6 +413,7 @@ merge_with_name <- function(x, df, ref_x, ref_y, ini_col, fin_col) {
 #'   If NULL, all layers are returned.
 #' @param select_cols Optional character vector of column names to keep in
 #'   the resulting data.
+#' @param verbose `logical`. If `TRUE`, prints progress messages.
 #'
 #' @return A list containing:
 #' \describe{
@@ -429,12 +430,15 @@ merge_with_name <- function(x, df, ref_x, ref_y, ini_col, fin_col) {
 #'
 #' @keywords internal
 #'
-get_etalab_data_by_idu <- function(idu, layer = NULL, select_cols = NULL) {
+get_etalab_data_by_idu <- function(idu,
+                                   layer = NULL,
+                                   select_cols = NULL,
+                                   verbose = TRUE) {
   idu_assert(idu)
   idu_parts <- idu_split(idu)
   insee_codes <- unique(idu_parts$insee)
 
-  data <- get_etalab(insee_codes, layer)
+  data <- get_etalab(insee_codes, layer, verbose = verbose)
 
   if (!is.null(select_cols)) data <- data[, select_cols, drop = FALSE]
 
@@ -509,7 +513,7 @@ idu_get_feuille <- function(idu, result_as_list = FALSE) {
 #' the requested location names.
 #'
 #' @examples
-#' # idu_get_name(c("12345ABCDE6789", "54321ZZZZZ1234"), loc = "both")
+#' # idu_get_name(c("721870000A0001", "721870000A0002"), loc = "both")
 #'
 #' @keywords internal
 #'
@@ -524,9 +528,9 @@ idu_get_name <- function(idu, loc = c("both", "reg", "dep", "com"), cog_field = 
   idu_parts <- idu_split(idu)
 
   # Reference datasets
-  regs <- rcadastre::region_2025
-  deps <- rcadastre::departement_2025
-  coms <- rcadastre::commune_2025
+  regs <- frcadastre::region_2025
+  deps <- frcadastre::departement_2025
+  coms <- frcadastre::commune_2025
 
   res <- idu_parts
 
@@ -570,7 +574,7 @@ idu_get_name <- function(idu, loc = c("both", "reg", "dep", "com"), cog_field = 
 #'
 #' @examples
 #' \dontrun{
-#' idu_get_lieudit(c("12345ABCDE6789", "54321ZZZZZ1234"))
+#' idu_get_lieudit(c("721870000A0001", "721870000A0002"))
 #' }
 #'
 #' @keywords internal
@@ -642,7 +646,7 @@ idu_get_lieudit <- function(idu) {
 #' @examples
 #' \dontrun{
 #' # Example IDUs
-#' my_idus <- c("12345ABCDE6789", "54321ZZZZZ1234")
+#' my_idus <- c("721870000A0001", "721870000A0002")
 #'
 #' # Get parcel contenance
 #' contenance_df <- idu_get_contenance(my_idus)
@@ -772,12 +776,14 @@ idu_get_attribute <- function(idu, attribute = c("name", "lieudit", "contenance"
 #'
 #' @param df A data.frame or sf object containing an IDU column.
 #' @param attributes Character vector of attributes to retrieve. Options:
-#'   "feuille", "name", "lieudit", "contenance".
+#'   "name", "lieudit", "contenance".
 #' @param ... Additional arguments passed to idu_get_attribute().
 #'
 #' @return A data.frame or sf object with requested attributes merged.
+#'
 #' @keywords internal
-idu_get_attribute_in_df <- function(df, attributes = c("feuille", "name", "lieudit", "contenance"), ...) {
+#'
+idu_get_attribute_in_df <- function(df, attributes = c("name", "lieudit", "contenance"), ...) {
   # Validate input type
   if (!inherits(df, c("data.frame", "sf"))) {
     stop("'df' must be a data.frame or sf object.", call. = FALSE)
@@ -789,7 +795,7 @@ idu_get_attribute_in_df <- function(df, attributes = c("feuille", "name", "lieud
 
   # Validate requested attributes
   attributes <- match.arg(attributes,
-                          choices = c("feuille", "name", "lieudit", "contenance"),
+                          choices = c("name", "lieudit", "contenance"),
                           several.ok = TRUE)
 
   # Iterate over attributes and merge

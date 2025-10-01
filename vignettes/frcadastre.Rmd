@@ -1,8 +1,8 @@
 ---
-title: "Introduction to rcadastre"
+title: "Introduction to frcadastre"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Introduction to rcadastre}
+  %\VignetteIndexEntry{Introduction to frcadastre}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -15,12 +15,12 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup}
-library(rcadastre)
+library(frcadastre)
 ```
 
 # Overview
 
-The rcadastre package provides tools to download, prepare, and use French cadastral datasets.
+The frcadastre package provides tools to download, prepare, and use French cadastral datasets.
 It integrates data from various official sources (Etalab, PCI, CDG, etc.) and offers helpers for reading, configuring, and working with administrative boundaries.
 An interactive Shiny app is also included for users who prefer a graphical interface.
 
@@ -28,10 +28,10 @@ An interactive Shiny app is also included for users who prefer a graphical inter
 
 ```{r installation, eval = FALSE}
 # From CRAN (once published)
-install.packages("rcadastre")
+install.packages("frcadastre")
 
 # Development version from GitHub
-devtools::install_github("mucau/rcadastre")
+devtools::install_github("mucau/frcadastre")
 ```
 
 # Main features
@@ -49,7 +49,7 @@ Administrative boundaries: included datasets for `commune_2025`, `departement_20
 ## Example workflow
 
 ```{r main_example, eval = FALSE}
-library(rcadastre)
+library(frcadastre)
 
 # Load example dataset
 data(commune_2025)
@@ -77,13 +77,13 @@ Configuration utilities: manage paths and metadata
 An interactive Shiny app is bundled within the package. You can launch it with:
 
 ```{r app, eval = FALSE}
-rcadastre::launch_app()
+frcadastre::launch_app()
 ```
 
 This provides a user-friendly interface for exploring cadastral data.
 
 # Conclusion
 
-The rcadastre package is designed to facilitate reproducible and transparent access to French cadastral datasets, either programmatically through R functions or interactively via the Shiny application.
+The frcadastre package is designed to facilitate reproducible and transparent access to French cadastral datasets, either programmatically through R functions or interactively via the Shiny application.
 
 Future developments will include extended support for new data sources and more utilities for spatial data management.

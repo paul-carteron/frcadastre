@@ -20,7 +20,7 @@ and returns a data.frame mapping IDUs to their lieu-dit names.
 }
 \examples{
 \dontrun{
-idu_get_lieudit(c("12345ABCDE6789", "54321ZZZZZ1234"))
+idu_get_lieudit(c("721870000A0001", "721870000A0002"))
 }
 
 }

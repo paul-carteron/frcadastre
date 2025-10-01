@@ -6,7 +6,7 @@
 \usage{
 idu_get_attribute_in_df(
   df,
-  attributes = c("feuille", "name", "lieudit", "contenance"),
+  attributes = c("name", "lieudit", "contenance"),
   ...
 )
 }
@@ -14,7 +14,7 @@ idu_get_attribute_in_df(
 \item{df}{A data.frame or sf object containing an IDU column.}
 
 \item{attributes}{Character vector of attributes to retrieve. Options:
-"feuille", "name", "lieudit", "contenance".}
+"name", "lieudit", "contenance".}
 
 \item{...}{Additional arguments passed to idu_get_attribute().}
 }

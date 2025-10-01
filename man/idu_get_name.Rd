@@ -25,7 +25,7 @@ their components, and merges them with reference datasets to retrieve the
 corresponding region, department, and/or commune names.
 }
 \examples{
-# idu_get_name(c("12345ABCDE6789", "54321ZZZZZ1234"), loc = "both")
+# idu_get_name(c("721870000A0001", "721870000A0002"), loc = "both")
 
 }
 \keyword{internal}

@@ -21,7 +21,7 @@ data from Etalab, and returns a data.frame linking each IDU to its \code{contena
 \examples{
 \dontrun{
 # Example IDUs
-my_idus <- c("12345ABCDE6789", "54321ZZZZZ1234")
+my_idus <- c("721870000A0001", "721870000A0002")
 
 # Get parcel contenance
 contenance_df <- idu_get_contenance(my_idus)

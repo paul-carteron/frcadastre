@@ -559,262 +559,177 @@ idu_get_name <- function(idu, loc = c("both", "reg", "dep", "com"), cog_field = 
   res[, intersect(keep_cols, names(res)), drop = FALSE]
 }
 
-#' Retrieve "lieu-dit" names for given IDUs
+#' Retrieve parcel data for given IDUs
 #'
-#' This function takes one or more valid IDU codes, retrieves parcel and lieu-dit
-#' data from Etalab, performs a spatial join to determine the lieu-dit for each IDU,
-#' and returns a data.frame mapping IDUs to their lieu-dit names.
+#' This function takes one or more valid IDU codes, retrieves parcel data from
+#' Etalab, and optionally enriches the parcels with their associated lieu-dit
+#' names and administrative names. The function returns an `sf` object containing
+#' the parcels and requested attributes.
 #'
 #' @param idu A `character` vector of valid IDU codes.
+#' @param with_lieudit `logical` (default: `TRUE`). Whether to retrieve and merge
+#'   lieu-dit names associated with the parcels.
+#' @param with_names `logical` (default: `TRUE`). Whether to retrieve and merge
+#'   administrative names (region, department, commune) associated with the parcels.
+#' @param ... Additional arguments passed to [idu_get_name()].
 #'
-#' @return A `data.frame` containing the split IDU parts and an additional
-#' `lieudit` column with the matched lieu-dit names.
+#' @return An `sf` object containing parcel geometries, the IDU code, and optionally
+#'   associated lieu-dit names and administrative names.
+#'
+#' @details
+#' - All IDU codes are validated before any data is retrieved.
+#' - If `with_lieudit = TRUE`, the function performs a spatial join with the
+#'   Etalab "lieux-dits" dataset and merges the names into the parcel data.
+#' - If `with_names = TRUE`, the function retrieves region, department, and commune
+#'   names using [idu_get_name()] and merges them into the parcel data.
+#' - The function ensures that Etalab data are returned as `sf` objects.
 #'
 #' @importFrom sf st_join st_drop_geometry
 #'
 #' @examples
 #' \dontrun{
-#' idu_get_lieudit(c("721870000A0001", "721870000A0002"))
-#' }
+#' # Retrieve parcels with both lieudit and names
+#' idu_get_parcelle(c("721870000A0001", "721870000A0002"))
 #'
-#' @keywords internal
+#' # Retrieve parcels without lieudit
+#' idu_get_parcelle("721870000A0001", with_lieudit = FALSE)
 #'
-idu_get_lieudit <- function(idu) {
-  # Validate IDUs
-  idu_assert(idu)
-
-  # Split IDU into components
-  idu_parts <- idu_split(idu)
-
-  # Get unique INSEE codes
-  insee_codes <- unique(idu_parts$insee)
-
-  # Download Etalab data for parcels and lieux-dits
-  parcelles <- get_etalab(insee_codes, verbose = FALSE) |>
-    idu_rename_in_df("idu") |>
-    subset(idu %in% idu_parts$idu)
-
-  lieudits  <- tryCatch(
-    get_etalab(insee_codes, "lieux_dits", verbose = FALSE),
-    error = function(e) NULL
-  )
-
-  # Return NULL if no lieux-dits data
-  if (is.null(lieudits)) return(NULL)
-
-  # Ensure both are sf objects
-  if (!inherits(parcelles, "sf") || !inherits(lieudits, "sf")) {
-    stop("Etalab data must be 'sf' objects.", call. = FALSE)
-  }
-
-  # Join parcels with lieux-dits (largest intersection)
-  intersections <- st_join(parcelles, lieudits, largest = TRUE) |>
-    st_drop_geometry() |>
-    suppressWarnings()
-
-  # Warn if some names are missing
-  if (any(is.na(intersections$nom))) {
-    warning("Some lieu-dit names are missing (NA) in the 'etalab' data.")
-  }
-
-  # Merge IDU components with lieu-dit names
-  res <- merge_with_name(
-    x       = idu_parts,
-    df      = intersections,
-    ref_x   = "idu",
-    ref_y   = "idu",
-    ini_col = "nom",
-    fin_col = "lieudit"
-  )
-
-  res[, c("idu", "lieudit")]
-}
-
-#' Retrieve contenance values for given IDUs
-#'
-#' This function takes one or more valid IDU codes, retrieves parcel
-#' data from Etalab, and returns a data.frame linking each IDU to its `contenance`
-#' (surface area in square meters).
-#'
-#' @param idu A `character` vector of valid IDU codes.
-#'
-#' @return A `data.frame` containing the split IDU parts and an additional
-#' `contenance` column with the matched surfaces.
-#'
-#' @importFrom sf st_drop_geometry
-#'
-#' @examples
-#' \dontrun{
-#' # Example IDUs
-#' my_idus <- c("721870000A0001", "721870000A0002")
-#'
-#' # Get parcel contenance
-#' contenance_df <- idu_get_contenance(my_idus)
-#' print(contenance_df)
-#' }
-#'
-#' @keywords internal
-#'
-idu_get_contenance <- function(idu) {
-  # Validate IDUs
-  idu_assert(idu)
-
-  # Split IDU into components
-  idu_parts <- idu_split(idu)
-
-  # Get unique INSEE codes
-  insee_codes <- unique(idu_parts$insee)
-
-  # Download Etalab parcel data
-  parcelles <- get_etalab(insee_codes, verbose = FALSE) |>
-    idu_rename_in_df("idu") |>
-    subset(idu %in% idu_parts$idu)
-
-  # Ensure sf object
-  if (!inherits(parcelles, "sf")) {
-    stop("Etalab parcel data must be an 'sf' object.", call. = FALSE)
-  }
-
-  # Warn if contenance column is missing
-  if (!"contenance" %in% names(parcelles)) {
-    warning("No 'contenance' column found in Etalab parcel data. Returning NULL.")
-    return(NULL)
-  }
-
-  # Merge IDU parts with contenance
-  res <- merge_with_name(
-    x       = idu_parts,
-    df      = parcelles,
-    ref_x   = "idu",
-    ref_y   = "idu",
-    ini_col = "contenance",
-    fin_col = "contenance"
-  )
-
-  res[, c("idu", "contenance")]
-}
-
-#' Retrieve attributes for a vector of IDU codes
-#'
-#' This function extracts one or more attributes associated with cadastral parcels
-#' identified by their IDU (Unique Parcel ID). The function internally dispatches
-#' to dedicated internal functions for each attribute type.
-#'
-#' @param idu `character`. A vector of 14-character IDU codes.
-#' @param attribute `character`. One or more attributes to retrieve. Choices are:
-#'   \describe{
-#'     \item{`"feuille"`}{Cadastral sheet IDs associated with the IDU.}
-#'     \item{`"name"`}{Administrative names (region, department, commune) associated with the IDU.}
-#'     \item{`"lieudit"`}{Name of the lieu-dit associated with the IDU.}
-#'     \item{`"contenance"`}{Parcel surface (contenance) associated with the IDU.}
-#'   }
-#' @param ... Additional arguments passed to the internal attribute-specific functions.
-#'
-#' @return A `data.frame` containing the requested attribute(s) for each IDU.
-#' Columns always include `idu`, followed by the requested attributes.
-#'
-#' @details
-#' - All IDU codes are validated before retrieving any data.
-#' - Internally, this function calls internals functions depending on the requested attribute(s).
-#' - Multiple attributes can be requested at once; the result will contain all selected attributes in separate columns.
-#'
-#' @examples
-#' \dontrun{
-#' idus <- c("721870000A0001", "721870000A0002")
-#'
-#' # Retrieve sheet IDs
-#' idu_get_attribute(idus, attribute = "feuille")
-#'
-#' # Retrieve administrative names
-#' idu_get_attribute(idus, attribute = "name")
-#'
-#' # Retrieve lieu-dit names
-#' idu_get_attribute(idus, attribute = "lieudit")
-#'
-#' # Retrieve parcel surfaces
-#' idu_get_attribute(idus, attribute = "contenance")
-#'
-#' # Retrieve multiple attributes at once
-#' idu_get_attribute(idus, attribute = c("name", "contenance"))
+#' # Retrieve parcels without administrative names
+#' idu_get_parcelle("721870000A0001", with_names = FALSE)
 #' }
 #'
 #' @export
 #'
-idu_get_attribute <- function(idu, attribute = c("name", "lieudit", "contenance"), ...) {
-  # Validate attribute argument
-  valid_attributes <- c("name", "lieudit", "contenance")
-  if (!all(attribute %in% valid_attributes)) {
-    stop("`attribute` must be one or more of: ", paste(valid_attributes, collapse = ", "))
+idu_get_parcelle <- function(idu, with_lieudit = TRUE, with_names = TRUE, ...) {
+  # Validate IDUs
+  idu_assert(idu)
+
+  # Split IDU and extract unique INSEE codes
+  idu_parts   <- idu_split(idu)
+  insee_codes <- unique(idu_parts$insee)
+
+  # Download parcels
+  parcelles <- get_etalab(insee_codes, verbose = TRUE) |>
+    idu_rename_in_df("idu") |>
+    subset(idu %in% idu_parts$idu)
+
+  # Ensure parcels are sf objects
+  if (!inherits(parcelles, "sf")) {
+    stop("Etalab data must be 'sf' objects.", call. = FALSE)
   }
 
-  # Mapping attribute to internal functions
-  fun_map <- list(
-    name       = idu_get_name,
-    lieudit    = idu_get_lieudit,
-    contenance = idu_get_contenance
-  )
+  # Retrieve lieux-dits if requested
+  if (with_lieudit) {
+    lieudits <- tryCatch(
+      get_etalab(insee_codes, "lieux_dits", verbose = FALSE),
+      error = function(e) NULL
+    )
 
-  # Retrieve all attributes using lapply
-  attr_list <- lapply(attribute, function(attr) {
-    res <- fun_map[[attr]](idu, ...)
-    # Keep only idu + relevant columns
-    cols <- setdiff(names(res), "idu")
-    res[, c("idu", cols), drop = FALSE]
-  })
+    # Only process if lieudits is an sf object
+    if (inherits(lieudits, "sf")) {
+      intersections <- suppressWarnings(
+        st_join(parcelles, lieudits, largest = TRUE) |> st_drop_geometry()
+      )
 
-  # Merge all results in a single data.frame
-  res <- Reduce(function(x, y) merge(x, y, by = "idu", all.x = TRUE), attr_list,
-                init = data.frame(idu = as.character(idu), stringsAsFactors = FALSE))
+      # Warn if some lieu-dit names are missing
+      if (anyNA(intersections$nom)) {
+        warning("Some lieu-dit names are missing (NA) in the 'etalab' data.")
+      }
 
-  res
-}
-
-#' Retrieve multiple IDU attributes directly in a data.frame
-#'
-#' Internal function. Detects the IDU column in a data.frame or sf object
-#' and merges requested attributes (feuille, name, lieudit, contenance) directly.
-#'
-#' @param df A data.frame or sf object containing an IDU column.
-#' @param attributes Character vector of attributes to retrieve. Options:
-#'   "name", "lieudit", "contenance".
-#' @param ... Additional arguments passed to idu_get_attribute().
-#'
-#' @return A data.frame or sf object with requested attributes merged.
-#'
-#' @keywords internal
-#'
-idu_get_attribute_in_df <- function(df, attributes = c("name", "lieudit", "contenance"), ...) {
-  # Validate input type
-  if (!inherits(df, c("data.frame", "sf"))) {
-    stop("'df' must be a data.frame or sf object.", call. = FALSE)
+      # Merge parcels with lieu-dit names
+      parcelles <- merge_with_name(
+        parcelles, intersections,
+        ref_x   = "idu",
+        ref_y   = "idu",
+        ini_col = "nom",
+        fin_col = "lieudit"
+      )
+    }
   }
 
-  # Detect IDU column
-  idu_info <- idu_detect_in_df(df, output = "both")
-  if (is.null(idu_info)) stop("No valid IDU column found in data.frame.")
+  # Retrieve parcel names if requested
+  if (with_names) {
+    names_df <- idu_get_name(idu, ...)
+    new_cols <- setdiff(names(names_df), "idu")
 
-  # Validate requested attributes
-  attributes <- match.arg(attributes,
-                          choices = c("name", "lieudit", "contenance"),
-                          several.ok = TRUE)
-
-  # Iterate over attributes and merge
-  for (attr in attributes) {
-    attr_df <- idu_get_attribute(df[[idu_info$name]], attribute = attr, ...)
-
-    # Determine column(s) to merge (exclude "idu")
-    new_cols <- setdiff(names(attr_df), "idu")
-
-    # Merge using internal helper
-    df <- merge_with_name(
-      x = df,
-      df = attr_df,
-      ref_x = idu_info$name,
-      ref_y = "idu",
+    parcelles <- merge_with_name(
+      parcelles, names_df,
+      ref_x   = "idu",
+      ref_y   = "idu",
       ini_col = new_cols,
       fin_col = new_cols
     )
   }
 
-  df
+  parcelles
+}
+
+#' Retrieve attributes for given IDUs
+#'
+#' This function extracts one or more attributes associated with cadastral parcels
+#' identified by their IDU (Unique Parcel ID). It uses [idu_get_parcelle()] to
+#' retrieve parcel data and then returns only the requested attributes.
+#'
+#' @param idu A `character` vector of valid IDU codes.
+#' @param attribute `character`. One or more attributes to retrieve. Choices are:
+#'   \describe{
+#'     \item{`"lieudit"`}{Lieu-dit name associated with the parcel.}
+#'     \item{`"contenance"`}{Parcel surface area (in square meters).}
+#'     \item{`"reg_name"`}{Region name associated with the parcel.}
+#'     \item{`"dep_name"`}{Department name associated with the parcel.}
+#'     \item{`"com_name"`}{Commune name associated with the parcel.}
+#'   }
+#' @param sf_as_result `logical` (default: `FALSE`). If `TRUE`, the result is
+#'   returned as an `sf` object with geometries; otherwise, a plain data.frame
+#'   without geometries is returned.
+#'
+#' @return A `data.frame` or an `sf` object containing the `idu` column and the
+#'   requested attribute(s).
+#'
+#' @details
+#' - All IDU codes are validated before retrieving any data.
+#' - By default, geometry is dropped and a `data.frame` is returned.
+#' - Setting `sf_as_result = TRUE` preserves the geometry and returns an `sf` object.
+#'
+#' @importFrom sf st_drop_geometry
+#'
+#' @examples
+#' \dontrun{
+#' idu <- c("721870000A0001", "721870000A0002")
+#'
+#' # Retrieve lieu-dit names
+#' idu_get_attribute(idu, attribute = "lieudit")
+#'
+#' # Retrieve parcel surfaces
+#' idu_get_attribute(idu, attribute = "contenance")
+#'
+#' # Retrieve multiple attributes as a plain data.frame
+#' idu_get_attribute(idu, attribute = c("lieudit", "contenance"))
+#'
+#' # Retrieve multiple attributes as an sf object
+#' idu_get_attribute(idu, attribute = c("lieudit", "reg_name"), sf_as_result = TRUE)
+#' }
+#'
+#' @export
+#'
+idu_get_attribute <- function(idu,
+                              attribute = c("lieudit", "contenance",
+                                            "reg_name", "dep_name", "com_name"),
+                              sf_as_result = FALSE) {
+
+  # Validate and normalize requested attributes
+  attribute <- match.arg(attribute,
+                         choices = c("lieudit", "contenance",
+                                     "reg_name", "dep_name", "com_name"),
+                         several.ok = TRUE)
+
+  # Get parcels with minimal data needed
+  res <- idu_get_parcelle(idu)[, c("idu", attribute), drop = FALSE]
+
+  # Convert to plain data.frame unless sf output is requested
+  if (isFALSE(sf_as_result)) {
+    res <- st_drop_geometry(res)
+  }
+
+  res
 }

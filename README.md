@@ -1,4 +1,4 @@
-# frcadastre
+# frcadastre<img src="man/figures/frcadastre_logo.svg" align="right" height="138" alt="" />
 
 ## The French Cadastre
 ### Short definition

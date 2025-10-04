@@ -1,5 +1,9 @@
 # frcadastre<img src="man/figures/frcadastre_logo.png" align="right" height="138" alt="" />
 
+<!-- badges: start -->
+  [![R-CMD-check](https://github.com/mucau/frcadastre/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/mucau/frcadastre/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
+
 ## The French Cadastre
 ### Short definition
 

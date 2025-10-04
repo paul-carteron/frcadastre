@@ -324,34 +324,47 @@ get_etalab <- function(id, data = "parcelles", verbose = TRUE) {
   data_flat <- if (is.list(data)) unlist(data, use.names = FALSE) else data
   tryCatch(
     check_etalab_data(data_flat, type = "proc"),
-    error = function(e) {
-      stop("Error in get_etalab: ", conditionMessage(e), call. = FALSE)
-    }
+    error = function(e) stop("Error in get_etalab: ", conditionMessage(e), call. = FALSE)
   )
 
   # 2. Build commune x layer pairs
   arg_pairs <- get_etalab_arg_pairs(id, data, verbose = verbose)
 
-  # 3. Detect scale for each commune
+  # 3. Detect scale for each commune (department or commune)
   scale <- insee_check(arg_pairs$commune, scale_as_return = TRUE, verbose = FALSE)
   format <- "geojson"
 
-  # 4. Build URLs
+  # 4. Build download URLs
   url_template <- "https://cadastre.data.gouv.fr/bundler/cadastre-etalab/%s/%s/%s/%s"
   urls <- sprintf(url_template, scale, arg_pairs$commune, format, arg_pairs$layer)
 
-  # 5. Download and read geometries from URLs
+  # 5. Download and read geometries from URLs (simplified)
   sf_data <- lapply(seq_along(urls), function(i) {
     u <- urls[i]
     layer_name <- arg_pairs$layer[i]
-    res <- tryCatch(read_geojson(u, type = "url"), error = function(e) NULL)
-    if (!inherits(res, "sf") || is.null(res)) return(NULL)
-    out <- list(res)
-    names(out) <- layer_name
-    out
+
+    # Try reading the GeoJSON and catch errors (like 404)
+    sf_obj <- tryCatch(
+      read_geojson(u, type = "url"),
+      error = function(e) {
+        if (verbose) message(sprintf("Layer '%s' could not be read: %s", layer_name, e$message))
+        return(NULL)
+      }
+    )
+
+    # If reading failed, return NULL
+    if (is.null(sf_obj)) return(NULL)
+
+    # Ensure sf_obj is always a list of sf (to handle single or multiple layers)
+    sf_obj <- if (inherits(sf_obj, "sf")) list(sf_obj) else sf_obj
+
+    # Name the list element(s) by layer
+    names(sf_obj) <- layer_name
+
+    sf_obj
   })
 
-  # 6. Remove NULLs
+  # 6. Remove NULL entries
   sf_data <- sf_data[!vapply(sf_data, is.null, logical(1))]
 
   # 7. Flatten the list (each element is an sf object named by layer)
@@ -359,6 +372,7 @@ get_etalab <- function(id, data = "parcelles", verbose = TRUE) {
   sf_list <- unname(sf_data)
   names_list <- names(sf_data)
 
-  # 8. Aggregate layers by name (multiple communes for the same layer)
+  # 8. Aggregate layers by name (combine multiple communes for the same layer)
   aggregate_sf_by_layer(sf_list, names_list)
 }
+

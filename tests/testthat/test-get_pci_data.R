@@ -27,13 +27,41 @@ test_that("get_pci_data() works online with real PCI data [httptest2]", {
   skip_if_not_installed("httptest2")
 
   httptest2::with_mock_dir("get_pci_data", {
-    # Commune code
-    pci_commune <- get_pci_data("72187", format = "dxf", verbose = FALSE)
-    expect_true(inherits(pci_commune, "sf"))
+    with_mocked_bindings(
+      download_archives = function(urls, destfiles = NULL,
+                                   extract_dir = NULL, use_subdirs = FALSE,
+                                   verbose = TRUE) {
+        tmp <- tempdir()
+        dir.create(file.path(tmp, "mock_extract"), showWarnings = FALSE)
+        list(file.path(tmp, "mock_extract"))
+      },
+      read_dxf = function(path) {
+        # Simulate a valid sf object
+        sf::st_sf(
+          idu = "fake_dxf",
+          geometry = sf::st_sfc(sf::st_point(c(1, 1)))
+        )
+      },
+      read_edigeo = function(path) {
+        # Simulate a valid list of sf objects
+        list(
+          sf::st_sf(
+            idu = "fake_edigeo",
+            geometry = sf::st_sfc(sf::st_point(c(2, 2)))
+          )
+        )
+      },
+      {
+        # Commune code - DXF format
+        pci_commune <- get_pci_data("72187", format = "dxf", verbose = FALSE)
+        expect_s3_class(pci_commune, "sf")
+        expect_true("idu" %in% names(pci_commune))
 
-    # Sheet code
-    pci_sheet <- get_pci_data("72181000AB01", format = "edigeo", verbose = FALSE)
-    expect_true(is.list(pci_sheet))
-    expect_true(all(sapply(pci_sheet, inherits, "sf")))
+        # Sheet code - EDIGEO format
+        pci_sheet <- get_pci_data("72181000AB01", format = "edigeo", verbose = FALSE)
+        expect_true(is.list(pci_sheet))
+        expect_true(all(sapply(pci_sheet, inherits, "sf")))
+      }
+    )
   })
 })

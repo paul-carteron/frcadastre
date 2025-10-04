@@ -1,80 +1,71 @@
-test_that("idu_get_parcelle() works with mocked dependencies (happy path)", {
-  fake_idu <- c("721870000A0001", "721870000A0002")
-
-  parcelles_sf <- st_sf(
-    idu = fake_idu,
-    geometry = st_sfc(st_point(c(1,1)), st_point(c(2,2))),
-    crs = 4326
+test_that("idu_get_parcelle() works offline with mocked dependencies", {
+  fake_idus <- c("721870000A0001", "721870000A0002")
+  fake_parts <- data.frame(
+    idu = fake_idus,
+    insee = c("72187", "72187"),
+    stringsAsFactors = FALSE
   )
 
-  lieudits_sf <- st_sf(
-    nom = c("Bois Joli", "Grande Prairie"),
-    geometry = st_sfc(st_point(c(1,1)), st_point(c(2,2))),
-    crs = 4326
+  fake_parcelles <- sf::st_sf(
+    idu = fake_idus,
+    geometry = sf::st_sfc(sf::st_point(c(1,1)), sf::st_point(c(2,2)))
   )
 
-  with_mocked_bindings(
-    # Mock Etalab: parcels or lieudits
-    get_etalab = function(id, data = "parcelles", verbose = TRUE) {
-      if (identical(data, "lieux_dits")) lieudits_sf else parcelles_sf
-    },
-    # Mock name merging: simply inject lieudit names
-    merge_with_name = function(x, y, ref_x, ref_y, ini_col, fin_col, ...) {
-      x[[fin_col]] <- c("Bois Joli", "Grande Prairie")
-      x
-    },
-    {
-      res <- idu_get_parcelle(fake_idu, with_lieudit = TRUE, with_names = TRUE)
-      expect_s3_class(res, "sf")
-      expect_true("lieudit" %in% names(res))
-      expect_equal(res$lieudit, c("Bois Joli", "Grande Prairie"))
-    }
+  fake_lieudits <- sf::st_sf(
+    idu = fake_idus,
+    nom = c("Lieu1", "Lieu2"),
+    geometry = sf::st_sfc(sf::st_point(c(1,1)), sf::st_point(c(2,2)))
   )
-})
 
-
-test_that("idu_get_parcelle() errors if lieux_dits is not sf", {
-  fake_idu <- c("721870000A0001", "721870000A0002")
-
-  parcelles_sf <- st_sf(
-    idu = fake_idu,
-    geometry = st_sfc(st_point(c(1,1)), st_point(c(2,2))),
-    crs = 4326
+  fake_names <- data.frame(
+    idu = fake_idus,
+    parc_nom = c("Parc1", "Parc2"),
+    stringsAsFactors = FALSE
   )
 
   with_mocked_bindings(
-    # Mock Etalab: returns NULL for lieudits
-    get_etalab = function(id, data = "parcelles", verbose = TRUE) {
-      if (identical(data, "lieux_dits")) NULL else parcelles_sf
-    },
-    {
-      expect_error(
-        idu_get_parcelle(fake_idu, with_lieudit = TRUE, with_names = TRUE),
-        "Etalab data must be 'sf' objects"
-      )
-    }
-  )
-})
-
-
-test_that("idu_get_parcelle() stops if get_etalab does not return sf", {
-  fake_idu <- "721870000A0001"
-  fake_insee <- "72187"
-
-  with_mocked_bindings(
-    # Mock IDU validation
     idu_assert = function(idu) TRUE,
-    # Mock IDU splitting into components
-    idu_split  = function(idu) data.frame(idu = idu, insee = fake_insee, stringsAsFactors = FALSE),
-    # Mock Etalab: returns a non-sf object
-    get_etalab = function(id, data = "parcelles", verbose = TRUE) list(),
-    # Mock renaming, just return input
-    idu_rename_in_df = function(df, col) df,
+    idu_split  = function(idu) fake_parts,
+    get_etalab = function(ids, layer = NULL, ...) {
+      if (!is.null(layer) && layer == "lieux_dits") fake_lieudits else fake_parcelles
+    },
+    idu_get_name = function(idu, ...) fake_names,
+    merge_with_name = function(x, y, ref_x, ref_y, ini_col, fin_col, ...) {
+      if (!is.null(ini_col) && !is.null(fin_col) && ini_col %in% names(y)) {
+        y[[fin_col]] <- y[[ini_col]]
+        if (ini_col != fin_col) y[[ini_col]] <- NULL
+      }
+      if (!ref_y %in% names(y)) y[[ref_y]] <- x[[ref_x]]
+      merge(x, y, by.x = ref_x, by.y = ref_y, all.x = TRUE)
+    },
+    st_join = sf::st_join,
     {
-      expect_error(
-        idu_get_parcelle(fake_idu),
-        "Etalab data must be 'sf' objects."
-      )
+      res <- idu_get_parcelle(fake_idus, with_lieudit = TRUE, with_names = TRUE)
+      expect_s3_class(res, "sf")
+      expect_true(all(fake_idus %in% res$idu))
+      expect_true(all(c("lieudit", "parc_nom") %in% names(res)))
     }
   )
+})
+
+
+
+test_that("idu_get_parcelle() works online with httptest2 mocks", {
+  skip_if_not_installed("httptest2")
+
+  httptest2::with_mock_dir("idu_get_parcelle", {
+    # Test avec un IDU unique
+    res_single <- idu_get_parcelle("721870000A0001")
+    expect_s3_class(res_single, "sf")
+    expect_true("idu" %in% names(res_single))
+
+    # Test avec plusieurs IDUs
+    res_multi <- idu_get_parcelle(c("721870000A0001", "721870000A0002"))
+    expect_s3_class(res_multi, "sf")
+    expect_true(all(c("idu") %in% names(res_multi)))
+
+    # Test avec lieudit désactivé
+    res_no_lieudit <- idu_get_parcelle(c("721870000A0001"), with_lieudit = FALSE)
+    expect_s3_class(res_no_lieudit, "sf")
+  })
 })

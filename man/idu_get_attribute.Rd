@@ -2,57 +2,61 @@
 % Please edit documentation in R/idu.R
 \name{idu_get_attribute}
 \alias{idu_get_attribute}
-\title{Retrieve attributes for a vector of IDU codes}
+\title{Retrieve attributes for given IDUs}
 \usage{
-idu_get_attribute(idu, attribute = c("name", "lieudit", "contenance"), ...)
+idu_get_attribute(
+  idu,
+  attribute = c("lieudit", "contenance", "reg_name", "dep_name", "com_name"),
+  sf_as_result = FALSE
+)
 }
 \arguments{
-\item{idu}{\code{character}. A vector of 14-character IDU codes.}
+\item{idu}{A \code{character} vector of valid IDU codes.}
 
 \item{attribute}{\code{character}. One or more attributes to retrieve. Choices are:
 \describe{
-\item{\code{"feuille"}}{Cadastral sheet IDs associated with the IDU.}
-\item{\code{"name"}}{Administrative names (region, department, commune) associated with the IDU.}
-\item{\code{"lieudit"}}{Name of the lieu-dit associated with the IDU.}
-\item{\code{"contenance"}}{Parcel surface (contenance) associated with the IDU.}
+\item{\code{"lieudit"}}{Lieu-dit name associated with the parcel.}
+\item{\code{"contenance"}}{Parcel surface area (in square meters).}
+\item{\code{"reg_name"}}{Region name associated with the parcel.}
+\item{\code{"dep_name"}}{Department name associated with the parcel.}
+\item{\code{"com_name"}}{Commune name associated with the parcel.}
 }}
 
-\item{...}{Additional arguments passed to the internal attribute-specific functions.}
+\item{sf_as_result}{\code{logical} (default: \code{FALSE}). If \code{TRUE}, the result is
+returned as an \code{sf} object with geometries; otherwise, a plain data.frame
+without geometries is returned.}
 }
 \value{
-A \code{data.frame} containing the requested attribute(s) for each IDU.
-Columns always include \code{idu}, followed by the requested attributes.
+A \code{data.frame} or an \code{sf} object containing the \code{idu} column and the
+requested attribute(s).
 }
 \description{
 This function extracts one or more attributes associated with cadastral parcels
-identified by their IDU (Unique Parcel ID). The function internally dispatches
-to dedicated internal functions for each attribute type.
+identified by their IDU (Unique Parcel ID). It uses \code{\link[=idu_get_parcelle]{idu_get_parcelle()}} to
+retrieve parcel data and then returns only the requested attributes.
 }
 \details{
 \itemize{
 \item All IDU codes are validated before retrieving any data.
-\item Internally, this function calls internals functions depending on the requested attribute(s).
-\item Multiple attributes can be requested at once; the result will contain all selected attributes in separate columns.
+\item By default, geometry is dropped and a \code{data.frame} is returned.
+\item Setting \code{sf_as_result = TRUE} preserves the geometry and returns an \code{sf} object.
 }
 }
 \examples{
 \dontrun{
-idus <- c("721870000A0001", "721870000A0002")
-
-# Retrieve sheet IDs
-idu_get_attribute(idus, attribute = "feuille")
-
-# Retrieve administrative names
-idu_get_attribute(idus, attribute = "name")
+idu <- c("721870000A0001", "721870000A0002")
 
 # Retrieve lieu-dit names
-idu_get_attribute(idus, attribute = "lieudit")
+idu_get_attribute(idu, attribute = "lieudit")
 
 # Retrieve parcel surfaces
-idu_get_attribute(idus, attribute = "contenance")
+idu_get_attribute(idu, attribute = "contenance")
 
-# Retrieve multiple attributes at once
-idu_get_attribute(idus, attribute = c("name", "contenance"))
+# Retrieve multiple attributes as a plain data.frame
+idu_get_attribute(idu, attribute = c("lieudit", "contenance"))
+
+# Retrieve multiple attributes as an sf object
+idu_get_attribute(idu, attribute = c("lieudit", "reg_name"), sf_as_result = TRUE)
 }
 
 }

@@ -4,7 +4,7 @@
 \alias{get_etalab_urls}
 \title{Generate URLs for Etalab Cadastre Data}
 \usage{
-get_etalab_urls(commune, data, millesime = "latest")
+get_etalab_urls(commune, data, millesime = "latest", verbose = TRUE)
 }
 \arguments{
 \item{commune}{\code{character} or \code{numeric} vector. The INSEE code(s) of the commune(s).}
@@ -15,6 +15,8 @@ If \code{list}, each element corresponds to a vector of layers for the matching 
 
 \item{millesime}{\code{character}. The version or millesime of the dataset.
 Must be on of \code{get_data_millesimes("etalab")}. Default is \code{"latest"}.}
+
+\item{verbose}{\code{logical}. If \code{TRUE}, prints progress messages.}
 }
 \value{
 A \code{character} vector containing unique URLs to the requested Etalab data layers.

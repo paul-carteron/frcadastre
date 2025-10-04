@@ -28,7 +28,10 @@
 #' @keywords internal
 #'
 get_base_data_url <- function(site) {
-  site <- match.arg(site, c("pci", "etalab"))
+  site <- tryCatch(
+    match.arg(site, c("pci", "etalab")),
+    error = function(e) stop("site must be one of 'pci' or 'etalab'", call. = FALSE)
+  )
 
   mapping <- c(
     pci    = "dgfip-pci-vecteur",
@@ -88,7 +91,7 @@ construct_data_url <- function(site,
 
   # Validate commune codes
   commune <- as.character(commune)
-  if (!all(commune %in% rcadastre::commune_2025$COM)) {
+  if (!all(commune %in% frcadastre::commune_2025$COM)) {
     stop("Some commune codes are invalid.")
   }
 
@@ -254,8 +257,8 @@ get_data_millesimes <- function(site) {
 #'
 insee_check <- function(x, scale_as_return = FALSE, verbose = TRUE) {
   x <- as.character(x)
-  communes    <- rcadastre::commune_2025
-  departements <- rcadastre::departement_2025
+  communes    <- frcadastre::commune_2025
+  departements <- frcadastre::departement_2025
 
   scales_detected <- character(length(x))
 
@@ -265,14 +268,14 @@ insee_check <- function(x, scale_as_return = FALSE, verbose = TRUE) {
     if (nchar(code) == 5) {
       # Commune
       idx <- which(communes$COM == code)
-      if (length(idx) == 0) stop(sprintf("Commune '%s' not found. Run rcadastre::commune_2025", code))
+      if (length(idx) == 0) stop(sprintf("Commune '%s' not found. Run frcadastre::commune_2025", code))
       log_msg(verbose, sprintf("Commune '%s' = '%s' selected", code, communes$NCCENR[idx]))
       if (scale_as_return) scales_detected[i] <- "communes"
 
     } else if (nchar(code) %in% c(2,3)) {
       # Département
       idx <- which(departements$DEP == code)
-      if (length(idx) == 0) stop(sprintf("Department '%s' not found. Run rcadastre::departement_2025", code))
+      if (length(idx) == 0) stop(sprintf("Department '%s' not found. Run frcadastre::departement_2025", code))
       log_msg(verbose, sprintf("Department '%s' = '%s' selected", code, departements$LIBELLE[idx]))
       if (scale_as_return) scales_detected[i] <- "departements"
 
@@ -283,4 +286,74 @@ insee_check <- function(x, scale_as_return = FALSE, verbose = TRUE) {
 
   if (scale_as_return) return(scales_detected)
   invisible(NULL)
+}
+
+#' Ensure that INSEE commune codes are not "mother communes"
+#'
+#' Some French cities (Paris, Lyon, Marseille) have a "mother commune" code
+#' (respectively 75056, 69123, 13055) that should not be used directly in
+#' cadastral queries. Instead, one must use the codes of their arrondissements
+#' (TYPECOM = "ARM"). This function checks a vector of commune codes and raises
+#' an error if one of the forbidden "mother commune" codes is found.
+#'
+#' @param x `character` or `numeric`. Vector of INSEE codes to validate.
+#'
+#' @return Invisibly returns `x` if no error is raised.
+#'
+#' @details
+#' If `x` contains one of the codes \code{75056}, \code{69123}, or \code{13055},
+#' an error is raised. The error message lists the valid arrondissement codes
+#' available in \code{frcadastre::commune_2025} for the corresponding city.
+#'
+#' @examples
+#' \dontrun{
+#' # Valid code, returns silently
+#' ensure_is_not_arr(35238)
+#'
+#' # Invalid code: mother commune of Paris
+#' ensure_is_not_arr(75056)
+#'
+#' # Vector input: mix of valid and invalid codes
+#' ensure_is_not_arr(c(35238, 75056, 69123))
+#' }
+#'
+#' @references
+#' Carteron, P. *happign* – R Interface to 'IGN' Web Services.
+#' GitHub: \url{https://github.com/paul-carteron/happign/blob/main/R/get_apicarto_cadastre.R}
+#'
+#' @keywords internal
+#'
+ensure_is_not_arr <- function(x) {
+  # Codes of "mother communes" (Paris, Lyon, Marseille)
+  arr_to_check <- c(paris = 75056, lyon = 69123, marseille = 13055)
+  # Prefixes of arrondissement commune codes
+  arr <- c(paris = "751", lyon = "693", marseille = "132")
+
+  # Find which elements of x are "mother commune" codes
+  is_arr <- x %in% arr_to_check
+
+  if (any(is_arr)) {
+    # Collect error messages for each invalid code
+    msgs <- vapply(x[is_arr], function(code) {
+      # Identify corresponding city
+      ville <- names(arr_to_check)[match(code, arr_to_check)]
+
+      # Make sure COM is treated as character, explicit column reference
+      valid_arr <- frcadastre::commune_2025[
+        frcadastre::commune_2025$TYPECOM == "ARM" &
+          startsWith(as.character(frcadastre::commune_2025$COM), arr[ville]),
+      ]
+
+      sprintf(
+        "Code %s corresponds to the mother commune of %s.\nUse one of the following arrondissement codes instead: %s",
+        code, ville, paste(valid_arr$COM, collapse = ", ")
+      )
+    }, FUN.VALUE = character(1))
+
+    # Raise a single error containing all invalid cases
+    stop(paste(msgs, collapse = "\n"), call. = FALSE)
+  }
+
+  # Otherwise return x invisibly
+  invisible(x)
 }

@@ -4,7 +4,7 @@
 \alias{get_etalab_arg_pairs}
 \title{Generate Commune-Layer Pairs for Etalab Data}
 \usage{
-get_etalab_arg_pairs(commune, data)
+get_etalab_arg_pairs(commune, data, verbose = TRUE)
 }
 \arguments{
 \item{commune}{\code{character} vector. The INSEE code(s) of the commune(s).}
@@ -12,6 +12,8 @@ get_etalab_arg_pairs(commune, data)
 \item{data}{\code{character} vector or \code{list}.
 If \code{character}, a vector of layers will be paired with all communes (Cartesian product).
 If \code{list}, each element corresponds to a vector of layers for the matching commune.}
+
+\item{verbose}{\code{logical}. If \code{TRUE}, prints progress messages.}
 }
 \value{
 A \code{data.frame} with columns:

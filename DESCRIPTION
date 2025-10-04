@@ -1,4 +1,4 @@
-Package: rcadastre
+Package: frcadastre
 Title: R Interface to get french cadastre data
 Version: 0.0.0.9000
 Authors@R: 
@@ -21,6 +21,7 @@ LazyData: true
 Suggests: 
     knitr,
     rmarkdown,
-    testthat (>= 3.1.7)
+    testthat (>= 3.1.7),
+    httptest2
 VignetteBuilder: knitr
 Config/testthat/edition: 3

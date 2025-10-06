@@ -132,7 +132,7 @@ get_pci_urls <- function(x,
 }
 
 ### Data section ----
-#' Download and Read PCI datasets from server
+#' Download and read PCI raw datasets from server
 #'
 #' This function downloads PCI data for given commune or sheet codes, extracts
 #' the files, and reads them into R as `sf` objects (for Edigeo) or another

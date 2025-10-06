@@ -203,7 +203,7 @@ get_etalab_urls <- function(commune,
   unique(unlist(mapply(get_url_one, pairs$commune, pairs$layer, layer_type, SIMPLIFY = FALSE)))
 }
 
-#' Download and Read Etalab datasets from server
+#' Download and read Etalab raw datasets from server
 #'
 #' This function downloads Etalab cadastre data for given communes
 #' and layers, extracts the archives, and reads the GeoJSON files into `sf` objects.

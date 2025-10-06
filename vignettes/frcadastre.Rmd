@@ -17,17 +17,15 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r setup}
-library(frcadastre)
-```
+# The package
 
-# The French Cadastre
+## What are we talking about ?
 
 The frcadastre package provides tools to download, prepare, and use
 French cadastral datasets. It focuses on **PCI** and **Etalab** cadastre
 dataset published on <https://cadastre.data.gouv.fr>.
 
-# Installation
+## How to get it ?
 
 ```{r installation, eval = FALSE}
 # From CRAN (once published)
@@ -43,9 +41,9 @@ devtools::install_github("mucau/frcadastre")
 
 The `get_etalab()` function allows access to **PCI Etalab** processed
 data by using bundle API from <https://cadastre.data.gouv.fr>. To know
-the available data from **PCI Etalab** bundle, run
-`get_etalab_layernames("proc")`. The `get_etalab()` function return `sf`
-objects.
+the available layername data from **PCI Etalab** bundle, run
+`get_etalab_layernames("proc")`. The `get_etalab()` function returns
+`sf` objects.
 
 The `get_etalab()` function works with an `id` argument (INSEE code) for
 department or city, and the `data` layername you want to get.
@@ -72,14 +70,15 @@ tm_shape(parcelles) +
 
 ## Etalab data
 
-More datasets are available by donwloading data from
-<https://cadastre.data.gouv.fr/data/>. The `get_etalab_data()` function
-allows access to **PCI Etalab** raw data. Datas are producted by date
-(millesime).
+More datasets are available by donwloading data from this server:
+<https://cadastre.data.gouv.fr/data/>.
+
+The `get_etalab_data()` function allows access to **PCI Etalab** raw
+data from the previous server. Datas are producted by date (millesime).
 
 To know from **PCI Etalab** data server :
 
--   available millesime, run `get_data_millesimes("etalab")` (for quick
+-   available millesimes, run `get_data_millesimes("etalab")` (for quick
     use, `"latest"` is better)
 
 -   available data, run `get_etalab_layernames()`.
@@ -121,7 +120,7 @@ date (millesime) in `DXF` and `EDIGEO` format.
 
 If you're motivated to juggle this data, good luck!
 
-## IDU utilitaries
+## IDU tools
 
 Each parcel from France is referenced by an unique id (IDU).
 

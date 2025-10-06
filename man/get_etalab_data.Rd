@@ -2,7 +2,7 @@
 % Please edit documentation in R/etalab.R
 \name{get_etalab_data}
 \alias{get_etalab_data}
-\title{Download and Read Etalab datasets from server}
+\title{Download and read Etalab raw datasets from server}
 \usage{
 get_etalab_data(
   commune,

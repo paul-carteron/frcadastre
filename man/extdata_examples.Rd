@@ -8,3 +8,4 @@
 These files are used internally for testing functions like \code{read_dxf()},
 \code{read_edigeo()}, and \code{read_geojson_file()}.
 }
+\keyword{internal}

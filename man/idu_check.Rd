@@ -2,7 +2,7 @@
 % Please edit documentation in R/idu.R
 \name{idu_check}
 \alias{idu_check}
-\title{Check if a vector contains valid IDU codes}
+\title{Check if a vector contains valid IDUs}
 \usage{
 idu_check(x)
 }
@@ -13,7 +13,7 @@ idu_check(x)
 A logical vector, TRUE for valid IDU entries.
 }
 \description{
-Check if a vector contains valid IDU codes
+Check if a vector contains valid IDUs
 }
 \details{
 An IDU is defined as:

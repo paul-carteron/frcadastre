@@ -2,19 +2,19 @@
 % Please edit documentation in R/etalab.R
 \name{check_etalab_data}
 \alias{check_etalab_data}
-\title{Validate ETALAB cadastre layers}
+\title{Validate Etalab layers}
 \usage{
 check_etalab_data(data, type = c("raw", "proc"))
 }
 \arguments{
-\item{data}{\code{character}. Vector of layer ETALAB names to validate.}
+\item{data}{\code{character}. Vector of layer Etalab names to validate.}
 }
 \value{
 \code{TRUE} if all layers are valid.
 Throws an error if any layer in \code{data} is invalid.
 }
 \description{
-Checks whether the requested ETALAB cadastre layers exist among the known raw and processed layers.
+Checks whether the requested Etalab cadastre layers exist among the known raw and processed layers.
 }
 \details{
 \itemize{

@@ -2,7 +2,7 @@
 % Please edit documentation in R/idu.R
 \name{idu_split}
 \alias{idu_split}
-\title{Split IDU into Its Components}
+\title{Split IDUs into their components}
 \usage{
 idu_split(idu)
 }

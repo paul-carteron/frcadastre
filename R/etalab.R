@@ -1,18 +1,18 @@
 ### Data section ----
-#' List ETALAB cadastre layers
+#' List Etalab data layers names
 #'
-#' Returns the names of ETALAB cadastre layers for the requested type(s).
+#' Returns the names of Etalab layers for the requested type(s).
 #'
-#' @param type `character`. ETALAB data type. Must be one or more of `"raw"` or `"proc"`.
-#' `"raw"` corresponds to raw ETALAB layers.
+#' @param type `character`. Etalab data type. Must be one or more of `"raw"` or `"proc"`.
+#' `"raw"` corresponds to raw Etalab layers.
 #' `"proc"` to processed layers.
 #' Default is `c("raw", "proc")`.
 #'
 #' @return A named list of character vectors containing layer names for each requested type.
 #'
 #' @details
-#' - `"raw"`: raw ETALAB layers such as `batiment`, `commune`, `parcelle`, etc.
-#' - `"proc"`: processed ETALAB layers such as `batiments`, `communes`, `parcelles`, etc.
+#' - `"raw"`: raw Etalab layers such as `batiment`, `commune`, `parcelle`, etc.
+#' - `"proc"`: processed Etalab layers such as `batiments`, `communes`, `parcelles`, etc.
 #' - Invalid `types` values will throw an error.
 #'
 #' @examples
@@ -42,11 +42,11 @@ get_etalab_layernames <- function(type = c("raw", "proc")) {
   mapping[type]
 }
 
-#' Validate ETALAB cadastre layers
+#' Validate Etalab layers
 #'
-#' Checks whether the requested ETALAB cadastre layers exist among the known raw and processed layers.
+#' Checks whether the requested Etalab cadastre layers exist among the known raw and processed layers.
 #'
-#' @param data `character`. Vector of layer ETALAB names to validate.
+#' @param data `character`. Vector of layer Etalab names to validate.
 #'
 #' @return `TRUE` if all layers are valid.
 #'   Throws an error if any layer in `data` is invalid.
@@ -203,7 +203,7 @@ get_etalab_urls <- function(commune,
   unique(unlist(mapply(get_url_one, pairs$commune, pairs$layer, layer_type, SIMPLIFY = FALSE)))
 }
 
-#' Download and Read Etalab Cadastre Data
+#' Download and Read Etalab datasets from server
 #'
 #' This function downloads Etalab cadastre data for given communes
 #' and layers, extracts the archives, and reads the GeoJSON files into `sf` objects.
@@ -280,7 +280,7 @@ get_etalab_data <- function(commune,
   sf_data
 }
 
-#' Download cadastre processed datasets from Etalab "bundle" cadastre.data.gouv
+#' Download Etalab processed datasets from "bundle" app
 #'
 #' This function downloads one or several dataset layer (e.g., `"parcelles"`) for
 #' one or several INSEE identifiers (department or commune) using the Etalab

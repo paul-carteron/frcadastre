@@ -2,13 +2,13 @@
 % Please edit documentation in R/etalab.R
 \name{get_etalab_layernames}
 \alias{get_etalab_layernames}
-\title{List ETALAB cadastre layers}
+\title{List Etalab data layers names}
 \usage{
 get_etalab_layernames(type = c("raw", "proc"))
 }
 \arguments{
-\item{type}{\code{character}. ETALAB data type. Must be one or more of \code{"raw"} or \code{"proc"}.
-\code{"raw"} corresponds to raw ETALAB layers.
+\item{type}{\code{character}. Etalab data type. Must be one or more of \code{"raw"} or \code{"proc"}.
+\code{"raw"} corresponds to raw Etalab layers.
 \code{"proc"} to processed layers.
 Default is \code{c("raw", "proc")}.}
 }
@@ -16,12 +16,12 @@ Default is \code{c("raw", "proc")}.}
 A named list of character vectors containing layer names for each requested type.
 }
 \description{
-Returns the names of ETALAB cadastre layers for the requested type(s).
+Returns the names of Etalab layers for the requested type(s).
 }
 \details{
 \itemize{
-\item \code{"raw"}: raw ETALAB layers such as \code{batiment}, \code{commune}, \code{parcelle}, etc.
-\item \code{"proc"}: processed ETALAB layers such as \code{batiments}, \code{communes}, \code{parcelles}, etc.
+\item \code{"raw"}: raw Etalab layers such as \code{batiment}, \code{commune}, \code{parcelle}, etc.
+\item \code{"proc"}: processed Etalab layers such as \code{batiments}, \code{communes}, \code{parcelles}, etc.
 \item Invalid \code{types} values will throw an error.
 }
 }

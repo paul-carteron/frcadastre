@@ -5,4 +5,5 @@
 #'
 #' @name extdata_examples
 #' @docType data
+#' @keywords internal
 NULL

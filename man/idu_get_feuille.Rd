@@ -2,7 +2,7 @@
 % Please edit documentation in R/idu.R
 \name{idu_get_feuille}
 \alias{idu_get_feuille}
-\title{Get feuille IDs from IDU codes}
+\title{Retrieve cadastral sheets IDs for given IDUs}
 \usage{
 idu_get_feuille(idu, result_as_list = FALSE)
 }
@@ -18,10 +18,10 @@ Either a \code{character} vector of feuille IDs (\code{result_as_list = FALSE})
 or a named \code{list} of feuille IDs grouped by INSEE code (\code{result_as_list = TRUE}).
 }
 \description{
-This internal function retrieves the feuille (sheet) IDs associated with
+This internal function retrieves the cadastral sheet (feuille) IDs associated with
 one or more IDU codes. It validates the IDUs, extracts their INSEE and
-feuille components, downloads feuille data from Etalab, and returns the
-matching feuille IDs.
+sheet components, downloads sheet data from Etalab, and returns the
+matching sheet IDs.
 }
 \examples{
 \dontrun{

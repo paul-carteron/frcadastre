@@ -2,7 +2,7 @@
 % Please edit documentation in R/idu.R
 \name{idu_build}
 \alias{idu_build}
-\title{Build a unique parcel identifier (IDU)}
+\title{Build IDUs from their components}
 \usage{
 idu_build(dep = NULL, com, prefix, section, numero)
 }
@@ -29,7 +29,7 @@ Optional if \code{com} already contains the full 5-character commune code.}
 A \code{character} vector of 14-character IDUs.
 }
 \description{
-Constructs a standardized 14-character IDU (Identifiant parcellaire Unique)
+Constructs a standardized 14-character IDU
 from department, commune, prefix, section, and parcel number.
 }
 \details{

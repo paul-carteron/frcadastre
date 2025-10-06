@@ -2,7 +2,7 @@
 % Please edit documentation in R/pci.R
 \name{get_pci_data}
 \alias{get_pci_data}
-\title{Download and Read PCI (Plan Cadastral Informatisé) Data}
+\title{Download and Read PCI datasets from server}
 \usage{
 get_pci_data(
   x,

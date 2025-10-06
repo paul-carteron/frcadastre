@@ -2,7 +2,7 @@
 % Please edit documentation in R/pci.R
 \name{get_pci_feuilles}
 \alias{get_pci_feuilles}
-\title{Retrieve PCI Sheet URLs for a Commune}
+\title{Retrieve PCI cadastral sheet URLs for given city codes}
 \usage{
 get_pci_feuilles(
   commune,

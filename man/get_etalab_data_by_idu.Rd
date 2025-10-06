@@ -2,7 +2,7 @@
 % Please edit documentation in R/idu.R
 \name{get_etalab_data_by_idu}
 \alias{get_etalab_data_by_idu}
-\title{Retrieve Etalab data for given IDU(s)}
+\title{Retrieve Etalab data for given IDUs}
 \usage{
 get_etalab_data_by_idu(idu, layer = NULL, select_cols = NULL, verbose = TRUE)
 }

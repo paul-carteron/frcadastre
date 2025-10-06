@@ -2,7 +2,7 @@
 % Please edit documentation in R/etalab.R
 \name{get_etalab}
 \alias{get_etalab}
-\title{Download cadastre processed datasets from Etalab "bundle" cadastre.data.gouv}
+\title{Download Etalab processed datasets from "bundle" app}
 \usage{
 get_etalab(id, data = "parcelles", verbose = TRUE)
 }

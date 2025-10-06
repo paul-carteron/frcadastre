@@ -1,5 +1,5 @@
 ### Feuilles section ----
-#' Retrieve PCI Sheet URLs for a Commune
+#' Retrieve PCI cadastral sheet URLs for given city codes
 #'
 #' Returns the URLs of PCI sheets (feuilles) for a given commune.
 #' Can return either absolute URLs or relative sheet identifiers.
@@ -132,7 +132,7 @@ get_pci_urls <- function(x,
 }
 
 ### Data section ----
-#' Download and Read PCI (Plan Cadastral Informatisé) Data
+#' Download and Read PCI datasets from server
 #'
 #' This function downloads PCI data for given commune or sheet codes, extracts
 #' the files, and reads them into R as `sf` objects (for Edigeo) or another

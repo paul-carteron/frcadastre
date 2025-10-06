@@ -34,9 +34,9 @@ idu_fmt <- function(x, width, upper = FALSE) {
   x
 }
 
-#' Build a unique parcel identifier (IDU)
+#' Build IDUs from their components
 #'
-#' Constructs a standardized 14-character IDU (Identifiant parcellaire Unique)
+#' Constructs a standardized 14-character IDU
 #' from department, commune, prefix, section, and parcel number.
 #'
 #' @param dep `character` or `NULL`. Department code.
@@ -133,7 +133,7 @@ idu_build <- function(dep = NULL, com, prefix, section, numero) {
   idu
 }
 
-#' Split IDU into Its Components
+#' Split IDUs into their components
 #'
 #' Splits a French cadastral parcel IDU (Identifiant de parcelle) into its
 #' components: department, commune, prefix, section, and parcel number.
@@ -203,7 +203,7 @@ idu_split <- function(idu) {
 }
 
 ### Check IDU section ----
-#' Check if a vector contains valid IDU codes
+#' Check if a vector contains valid IDUs
 #'
 #' @param x A character vector to validate.
 #' @return A logical vector, TRUE for valid IDU entries.
@@ -402,7 +402,7 @@ merge_with_name <- function(x, df, ref_x, ref_y, ini_col, fin_col) {
   res
 }
 
-#' Retrieve Etalab data for given IDU(s)
+#' Retrieve Etalab data for given IDUs
 #'
 #' This internal function downloads Etalab cadastral data corresponding to
 #' one or more IDU codes. It also splits the IDUs into their components for
@@ -445,12 +445,12 @@ get_etalab_data_by_idu <- function(idu,
   list(data = data, idu_parts = idu_parts)
 }
 
-#' Get feuille IDs from IDU codes
+#' Retrieve cadastral sheets IDs for given IDUs
 #'
-#' This internal function retrieves the feuille (sheet) IDs associated with
+#' This internal function retrieves the cadastral sheet (feuille) IDs associated with
 #' one or more IDU codes. It validates the IDUs, extracts their INSEE and
-#' feuille components, downloads feuille data from Etalab, and returns the
-#' matching feuille IDs.
+#' sheet components, downloads sheet data from Etalab, and returns the
+#' matching sheet IDs.
 #'
 #' @param idu A `character` vector of valid IDU codes.
 #' @param result_as_list `logical`. If `TRUE`, returns a named list where

@@ -14,7 +14,8 @@ Imports:
     archive,
     httr2,
     sf,
-    xml2
+    xml2,
+    pdftools
 Depends: 
     R (>= 4.1.0)
 LazyData: true

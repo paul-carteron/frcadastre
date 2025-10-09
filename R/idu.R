@@ -1,4 +1,3 @@
-### Manage IDU section ----
 #' Format IDU components with padding and optional uppercase
 #'
 #' This internal utility formats a vector of values by padding them with
@@ -28,6 +27,7 @@
 #' @keywords internal
 #'
 idu_fmt <- function(x, width, upper = FALSE) {
+  x <- trimws(x)
   x <- sprintf(paste0("%", width, "s"), as.character(x))
   x <- gsub(" ", "0", x)
   if (upper) x <- toupper(x)
@@ -712,10 +712,10 @@ idu_get_parcelle <- function(idu, with_lieudit = TRUE, with_names = TRUE, ...) {
 #'
 #' @export
 #'
-idu_get_attribute <- function(idu,
-                              attribute = c("lieudit", "contenance",
-                                            "reg_name", "dep_name", "com_name"),
-                              sf_as_result = FALSE) {
+idu_get_attribute <- function(
+    idu,
+    attribute = c("lieudit", "contenance", "reg_name", "dep_name", "com_name"),
+    sf_as_result = FALSE) {
 
   # Validate and normalize requested attributes
   attribute <- match.arg(attribute,

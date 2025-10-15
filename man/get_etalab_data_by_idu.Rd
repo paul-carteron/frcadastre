@@ -4,16 +4,13 @@
 \alias{get_etalab_data_by_idu}
 \title{Retrieve Etalab data for given IDUs}
 \usage{
-get_etalab_data_by_idu(idu, layer = NULL, select_cols = NULL, verbose = TRUE)
+get_etalab_data_by_idu(idu, layer = NULL, verbose = TRUE)
 }
 \arguments{
 \item{idu}{A character vector of IDU codes (14-character format).}
 
 \item{layer}{Optional character string specifying a layer to retrieve.
 If NULL, all layers are returned.}
-
-\item{select_cols}{Optional character vector of column names to keep in
-the resulting data.}
 
 \item{verbose}{\code{logical}. If \code{TRUE}, prints progress messages.}
 }
@@ -33,7 +30,6 @@ further processing.
 \dontrun{
 get_etalab_data_by_idu("72181000AB01")
 get_etalab_data_by_idu(c("72181000AB01", "72181000AB02"), layer = "parcelles")
-get_etalab_data_by_idu("72181000AB01", select_cols = c("idu", "cont"))
 }
 
 }

@@ -36,7 +36,9 @@ The IDU structure is:
 }\if{html}{\out{</div>}}
 }
 \examples{
+\dontrun{
 try(idu_split("0100200A0012"))
 idu_split("29158000AK0001")
+}
 
 }

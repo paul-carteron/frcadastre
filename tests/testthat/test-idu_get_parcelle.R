@@ -24,12 +24,12 @@ test_that("idu_get_parcelle() works offline with mocked dependencies", {
   )
 
   with_mocked_bindings(
-    idu_assert = function(idu) TRUE,
+    idu_check = function(idu, error = TRUE) TRUE,
     idu_split  = function(idu) fake_parts,
     get_etalab = function(ids, layer = NULL, ...) {
       if (!is.null(layer) && layer == "lieux_dits") fake_lieudits else fake_parcelles
     },
-    idu_get_name = function(idu, ...) fake_names,
+    idu_get_cog = function(idu, ...) fake_names,
     merge_with_name = function(x, y, ref_x, ref_y, ini_col, fin_col, ...) {
       if (!is.null(ini_col) && !is.null(fin_col) && ini_col %in% names(y)) {
         y[[fin_col]] <- y[[ini_col]]
@@ -40,15 +40,13 @@ test_that("idu_get_parcelle() works offline with mocked dependencies", {
     },
     st_join = sf::st_join,
     {
-      res <- idu_get_parcelle(fake_idus, with_lieudit = TRUE, with_names = TRUE)
+      res <- idu_get_parcelle(fake_idus, with_lieudit = TRUE, with_cog = TRUE)
       expect_s3_class(res, "sf")
       expect_true(all(fake_idus %in% res$idu))
       expect_true(all(c("lieudit", "parc_nom") %in% names(res)))
     }
   )
 })
-
-
 
 test_that("idu_get_parcelle() works online with httptest2 mocks", {
   skip_if_not_installed("httptest2")

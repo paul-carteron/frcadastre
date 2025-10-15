@@ -28,13 +28,15 @@ This function scans each column of a data frame to identify the one
 containing IDU values.
 }
 \examples{
+\dontrun{
 df <- data.frame(
-  parcel_id = c("12345ABCDE6789", "54321ZZZZZ0000"),
+  parcel_id = c("721870000A0001", "971020000B0002"),
   name = c("Oak", "Pine"),
   stringsAsFactors = FALSE
 )
 idu_detect_in_df(df)
 idu_detect_in_df(df, output = "name")
 idu_detect_in_df(df, output = "position")
+}
 
 }

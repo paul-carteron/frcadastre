@@ -1,52 +1,14 @@
 ### Manage IDU section ----
-#' Format IDU components with padding and optional uppercase
-#'
-#' This internal utility formats a vector of values by padding them with
-#' leading zeros to a specified width. Optionally, the values can be converted
-#' to uppercase.
-#'
-#' @param x A vector of values to format.
-#' @param width An integer specifying the target width for each value.
-#' @param upper Logical; if TRUE, convert the values to uppercase.
-#'
-#' @return A character vector with each element formatted to the specified width
-#' and optionally in uppercase.
-#'
-#' @details
-#' - Leading spaces are replaced with zeros.
-#' - Useful for constructing IDU codes or components consistently.
-#'
-#' @examples
-#' \dontrun{
-#' idu_fmt(c(1, 23, 456), width = 5)
-#' # Returns: "00001" "00023" "00456"
-#'
-#' idu_fmt(c("ab", "cd"), width = 4, upper = TRUE)
-#' # Returns: "00AB" "00CD"
-#' }
-#'
-#' @keywords internal
-#'
-idu_fmt <- function(x, width, upper = FALSE) {
-  x <- sprintf(paste0("%", width, "s"), as.character(x))
-  x <- gsub(" ", "0", x)
-  if (upper) x <- toupper(x)
-  x
-}
-
 #' Build IDUs from their components
 #'
 #' Constructs a standardized 14-character IDU
 #' from department, commune, prefix, section, and parcel number.
 #'
-#' @param dep `character` or `NULL`. Department code.
-#' Must be 2 characters (e.g., `"01"`, `"95"`, `"2A"`, `"2B"`),
+#' @param dep `character`. Department code (mandatory).
+#' Must be 2 characters (e.g., `"01"`, `"95"`, `"2A"`, `"2B"`)
 #' or 3 characters for overseas departments (`"971"`–`"978"`).
-#' Optional if `com` already contains the full 5-character commune code.
-#' @param com `character`. Commune code.
-#' - If length 5: full INSEE commune code (department already included).
-#' - If length 3: commune code within a metropolitan department (requires `dep`).
-#' - If length 2: commune code within an overseas department (requires `dep`).
+#' @param com `character`. Commune code within the department.
+#' Must be 3 characters for metropolitan France, or 2 characters for overseas departments.
 #' @param prefix `character`. Prefix code (3 characters, zero-padded).
 #' @param section `character`. Section code (2 characters, zero-padded, uppercase).
 #' @param numero `character`. Parcel number (4 characters, zero-padded).
@@ -56,75 +18,66 @@ idu_fmt <- function(x, width, upper = FALSE) {
 #' @details
 #' - All input vectors must have the same length.
 #' - The function automatically zero-pads and uppercases fields where required.
-#' - Input is validated against INSEE commune and department codes.
+#' - Both `dep` and `com` are required.
 #'
 #' @seealso [insee_check()], [idu_check()]
 #'
 #' @examples
 #' \dontrun{
-#' # With separate department and commune codes
 #' idu_build(dep = "72", com = "187", prefix = "000", section = "A", numero = "1")
-#'
-#' # With commune code including department
-#' idu_build(com = "72187", prefix = "000", section = "A", numero = "1")
-#'
-#' # With a plots dataframe
-#' parcelle <- get_etalab(72187)
-#' parcelle$idu <- idu_build(com = parcelle$commune,
-#'                           prefix=parcelle$prefixe,
-#'                           section=parcelle$section,
-#'                           numero=parcelle$numero)
 #' }
 #'
 #' @export
 #'
-idu_build <- function(dep = NULL, com, prefix, section, numero) {
-  # Ensure character
-  dep     <- if (!is.null(dep)) as.character(dep) else NULL
-  com     <- as.character(com)
-  prefix  <- idu_fmt(prefix, 3)
-  section <- idu_fmt(section, 2, upper = TRUE)
-  numero  <- idu_fmt(numero, 4)
-
-  # Check lengths consistency
-  lengths <- c(
-    if (!is.null(dep)) length(dep),
-    length(com),
-    length(prefix),
-    length(section),
-    length(numero)
+idu_build <- function(dep, com, prefix, section, numero) {
+  # Check args
+  missing_args <- c(
+    dep     = missing(dep),
+    com     = missing(com),
+    prefix  = missing(prefix),
+    section = missing(section),
+    numero  = missing(numero)
   )
+  if (any(missing_args)) {
+    stop(
+      "Missing required argument(s): ",
+      paste(names(missing_args)[missing_args], collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  # Ensure character and format
+  dep     <- as.character(dep)
+  com     <- as.character(com)
+  prefix  <- pad0(prefix, 3)
+  section <- pad0(section, 2, upper = TRUE)
+  numero  <- pad0(numero, 4)
+
+  # Check consistent lengths
+  lengths <- c(length(dep), length(com), length(prefix), length(section), length(numero))
   if (length(unique(lengths)) != 1) {
     stop("All input vectors (dep, com, prefix, section, numero) must have the same length.",
          call. = FALSE)
   }
 
-  # Commune length check
+  # Validate length of codes
+  dep_len <- nchar(dep)
   com_len <- nchar(com)
-  if (any(!com_len %in% c(2, 3, 5))) {
-    stop("`com` must have 2, 3, or 5 characters.", call. = FALSE)
-  }
-  if (any(com_len < 5) && is.null(dep)) {
-    stop("`dep` is required when `com` has 2 or 3 characters.", call. = FALSE)
-  }
+  if (any(!dep_len %in% c(2, 3))) stop("`dep` must have 2 or 3 characters.", call. = FALSE)
+  if (any(!com_len %in% c(2, 3))) stop("`com` must have 2 or 3 characters.", call. = FALSE)
 
-  # Construct commune codes
+  # Build full commune code
   commune <- ifelse(
-    com_len == 5,
-    com,
-    paste0(
-      idu_fmt(dep, ifelse(substr(dep, 1, 2) == "97", 3, 2), upper = TRUE),
-      idu_fmt(com, ifelse(substr(dep, 1, 2) == "97", 2, 3))
-    )
+    substr(dep, 1, 2) == "97",
+    paste0(pad0(dep, 3, upper = TRUE), pad0(com, 2)),
+    paste0(pad0(dep, 2, upper = TRUE), pad0(com, 3))
   )
 
-  # Validate commune codes
+  # Validate INSEE commune codes
   insee_check(commune, verbose = FALSE)
 
-  # Assemble IDU
+  # Build and validate IDUs
   idu <- paste0(commune, prefix, section, numero)
-
-  # Validate IDUs
   valid <- idu_check(idu)
   if (!all(valid)) {
     stop("Invalid IDU(s) generated: ", paste(idu[!valid], collapse = ", "), call. = FALSE)
@@ -160,13 +113,15 @@ idu_build <- function(dep = NULL, com, prefix, section, numero) {
 #' ```
 #'
 #' @examples
+#' \dontrun{
 #' try(idu_split("0100200A0012"))
 #' idu_split("29158000AK0001")
+#' }
 #'
 #' @export
 #'
 idu_split <- function(idu) {
-  idu_assert(idu)
+  idu_check(idu)
 
   # Extract first 2 and 3 characters (possible department codes)
   dep2 <- substr(idu, 1, 2)
@@ -205,52 +160,64 @@ idu_split <- function(idu) {
 ### Check IDU section ----
 #' Check if a vector contains valid IDUs
 #'
-#' @param x A character vector to validate.
-#' @return A logical vector, TRUE for valid IDU entries.
+#' This function checks whether a character vector contains valid INSEE
+#' cadastral parcel identifiers (IDUs). It can either return a logical
+#' vector indicating validity or raise an error if invalid entries are found.
+#'
+#' @param x A character vector containing IDU codes to validate.
+#' @param error Logical. If `TRUE` (default), the function stops with an error
+#'   message when invalid IDUs are detected. If `FALSE`, it returns a logical
+#'   vector indicating which entries are valid.
 #'
 #' @details
-#' An IDU is defined as:
+#' A valid IDU (INSEE cadastral identifier) must satisfy all of the following:
 #' \itemize{
-#'   \item A `character` vector of length 14 for all entries
-#'   \item First 1 characters: department -> digits (0–9)
-#'   \item Next 1 characters: department -> digits (0–9) or uppercase letters 'A'/'B'
-#'   \item Next 3 characters: commune -> digits (0–9)
-#'   \item Next 3 characters: prefixe -> digits (0–9)
-#'   \item Next 2 characters: section -> digits (0–9) or uppercase letters (A–Z)
-#'   \item Last 4 characters: numero -> digits (0–9)
-#'   \item No missing values (NA) or empty strings
-#'   \item No lowercase letters or special characters
+#'   \item Be a non-missing, non-empty string of length 14.
+#'   \item The first two characters: department code — digits (0–9) or letters 'A'/'B'.
+#'   \item The next three characters: commune code — digits (0–9).
+#'   \item The next three characters: prefix — digits (0–9).
+#'   \item The next two characters: section — digits (0–9) or uppercase letters (A–Z).
+#'   \item The last four characters: parcel number — digits (0–9).
+#'   \item Contain no lowercase letters or special characters.
+#' }
+#'
+#' @return
+#' If `error = FALSE`, a logical vector indicating which elements of `x` are valid.
+#' If `error = TRUE`, the function stops when invalid codes are found and
+#' invisibly returns `TRUE` otherwise.
+#'
+#' @examples
+#' \dontrun{
+#' # Valid IDU
+#' idu_check("01001000AA0123")
+#'
+#' # Multiple values
+#' idu_check(c("01001000AA0123", "AB12300000A0123"), error = FALSE)
+#'
+#' # Invalid example (will throw an error)
+#' idu_check(c("01001000AA0123", "12345"))
 #' }
 #'
 #' @export
 #'
-idu_check <- function(x) {
+idu_check <- function(x, error = TRUE) {
   x <- as.character(x)
   pattern <- "^[0-9AB]{2}[0-9]{3}[0-9]{3}[0-9A-Z]{2}[0-9]{4}$"
-  !is.na(x) & x != "" & nchar(x) == 14 & grepl(pattern, x)
-}
+  valid <- !is.na(x) & x != "" & nchar(x) == 14 & grepl(pattern, x)
 
-#' Assert that IDU codes are valid
-#'
-#' Throws an error if any element of `idu` is invalid.
-#'
-#' @param idu Character vector of IDU codes.
-#'
-#' @return Invisibly returns TRUE if all IDUs are valid.
-#'
-#' @keywords internal
-#'
-idu_assert <- function(idu) {
-  idu <- as.character(idu)
-  valid <- idu_check(idu)
-  if (!all(valid)) {
+  if (error && !all(valid)) {
     stop(
       "Invalid IDU(s) detected: ",
-      paste(idu[!valid], collapse = ", "),
+      paste(x[!valid], collapse = ", "),
       call. = FALSE
     )
   }
-  invisible(TRUE)
+
+  if (error) {
+    invisible(TRUE)
+  } else {
+    valid
+  }
 }
 
 ### Manage IDU field in df section ----
@@ -275,14 +242,16 @@ idu_assert <- function(idu) {
 #' Returns `NULL` if no column matches the IDU pattern.
 #'
 #' @examples
+#' \dontrun{
 #' df <- data.frame(
-#'   parcel_id = c("12345ABCDE6789", "54321ZZZZZ0000"),
+#'   parcel_id = c("721870000A0001", "971020000B0002"),
 #'   name = c("Oak", "Pine"),
 #'   stringsAsFactors = FALSE
 #' )
 #' idu_detect_in_df(df)
 #' idu_detect_in_df(df, output = "name")
 #' idu_detect_in_df(df, output = "position")
+#' }
 #'
 #' @export
 #'
@@ -293,7 +262,7 @@ idu_detect_in_df <- function(df, output = c("both", "name", "position")) {
   for (i in seq_along(df)) {
     col <- df[[i]]
     if (!is.character(col)) next
-    if (all(idu_check(col))) {
+    if (all(idu_check(col, error = FALSE))) {
       return(switch(output,
                     name = names(df)[i],
                     position = i,
@@ -337,71 +306,6 @@ idu_rename_in_df <- function(df, new_name) {
 }
 
 ### Get attribut IDU section ----
-#' Merge two data frames and rename a column
-#'
-#' @description
-#' Internal helper function to merge two data frames on specified key columns
-#' and rename a target column in the joined result.
-#'
-#' @param x A \code{data.frame} containing the primary data.
-#' @param df A \code{data.frame} containing the lookup or join data.
-#' @param ref_x Name of the column in \code{x} to use as the join key.
-#' @param ref_y Name of the column in \code{df} to use as the join key.
-#' @param ini_col Name of the column in \code{df} to extract and rename.
-#' @param fin_col New name to assign to \code{ini_col} in the output.
-#'
-#' @details
-#' The function:
-#' \enumerate{
-#'   \item Checks that \code{ini_col} exists in \code{df}.
-#'   \item Performs a left join of \code{x} with \code{df} using
-#'         \code{merge()}, matching \code{ref_x} with \code{ref_y}.
-#'   \item Selects only the join key (\code{ref_y}) and \code{ini_col}
-#'         from \code{df}.
-#'   \item Renames \code{ini_col} in the result to \code{fin_col}.
-#' }
-#'
-#' @return
-#' A \code{data.frame} containing all rows from \code{x} and the matched
-#' values from \code{df}, with \code{ini_col} renamed to \code{fin_col}.
-#'
-#' @examples
-#' \dontrun{
-#' df1 <- data.frame(id = 1:3, value = letters[1:3])
-#' df2 <- data.frame(key = 1:3, original = c("A", "B", "C"))
-#'
-#' merge_with_name(df1, df2, "id", "key", "original", "renamed")
-#' }
-#'
-#' @keywords internal
-#'
-merge_with_name <- function(x, df, ref_x, ref_y, ini_col, fin_col) {
-  # Check that all columns exist
-  missing_cols <- setdiff(ini_col, names(df))
-  if (length(missing_cols) > 0) {
-    stop(sprintf("Column(s) '%s' not found in join table.",
-                 paste(missing_cols, collapse = ", ")), call. = FALSE)
-  }
-
-  # Subset df to the columns we need
-  subset_df <- df[, c(ref_y, ini_col), drop = FALSE]
-
-  # Merge
-  res <- merge(
-    x,
-    subset_df,
-    by.x = ref_x,
-    by.y = ref_y,
-    all.x = TRUE,
-    all.y = FALSE
-  )
-
-  # Rename columns
-  names(res)[names(res) %in% ini_col] <- fin_col
-
-  res
-}
-
 #' Retrieve Etalab data for given IDUs
 #'
 #' This internal function downloads Etalab cadastral data corresponding to
@@ -411,8 +315,6 @@ merge_with_name <- function(x, df, ref_x, ref_y, ini_col, fin_col) {
 #' @param idu A character vector of IDU codes (14-character format).
 #' @param layer Optional character string specifying a layer to retrieve.
 #'   If NULL, all layers are returned.
-#' @param select_cols Optional character vector of column names to keep in
-#'   the resulting data.
 #' @param verbose `logical`. If `TRUE`, prints progress messages.
 #'
 #' @return A list containing:
@@ -425,22 +327,18 @@ merge_with_name <- function(x, df, ref_x, ref_y, ini_col, fin_col) {
 #' \dontrun{
 #' get_etalab_data_by_idu("72181000AB01")
 #' get_etalab_data_by_idu(c("72181000AB01", "72181000AB02"), layer = "parcelles")
-#' get_etalab_data_by_idu("72181000AB01", select_cols = c("idu", "cont"))
 #' }
 #'
 #' @keywords internal
 #'
 get_etalab_data_by_idu <- function(idu,
                                    layer = NULL,
-                                   select_cols = NULL,
                                    verbose = TRUE) {
-  idu_assert(idu)
+  idu_check(idu)
   idu_parts <- idu_split(idu)
   insee_codes <- unique(idu_parts$insee)
 
   data <- get_etalab(insee_codes, layer, verbose = verbose)
-
-  if (!is.null(select_cols)) data <- data[, select_cols, drop = FALSE]
 
   list(data = data, idu_parts = idu_parts)
 }
@@ -505,7 +403,7 @@ idu_get_feuille <- function(idu, result_as_list = FALSE) {
 #'
 #' @param idu A `character` vector of valid IDU codes.
 #' @param loc A `character` string specifying which location levels to include.
-#' One of `"both"`, `"reg"`, `"dep"`, or `"com"`.
+#' One of `"reg"`, `"dep"`, or `"com"`.
 #' @param cog_field `character`. Défaut is `"NCC"`.
 #' The name of the field in the reference datasets to use.
 #'
@@ -513,16 +411,18 @@ idu_get_feuille <- function(idu, result_as_list = FALSE) {
 #' the requested location names.
 #'
 #' @examples
-#' # idu_get_name(c("721870000A0001", "721870000A0002"), loc = "both")
+#' \dontrun{
+#' idu_get_cog(c("721870000A0001", "721870000A0002"))
+#' }
 #'
 #' @keywords internal
 #'
-idu_get_name <- function(idu, loc = c("both", "reg", "dep", "com"), cog_field = "NCC") {
+idu_get_cog <- function(idu, loc = c("reg", "dep", "com"), cog_field = "NCC") {
   # Match argument
-  loc <- match.arg(loc)
+  loc <- match.arg(loc, c("reg", "dep", "com"), several.ok = TRUE)
 
   # Validate IDUs
-  idu_assert(idu)
+  idu_check(idu)
 
   # Split IDU into components
   idu_parts <- idu_split(idu)
@@ -535,26 +435,26 @@ idu_get_name <- function(idu, loc = c("both", "reg", "dep", "com"), cog_field = 
   res <- idu_parts
 
   # Merge region names if requested
-  if (loc %in% c("both", "reg")) {
+  if ("reg" %in% loc) {
     res <- merge_with_name(res, deps, "code_dep", "DEP", "REG", "code_reg")
     res <- merge_with_name(res, regs, "code_reg", "REG", cog_field, "reg_name")
   }
 
   # Merge department names if requested
-  if (loc %in% c("both", "dep")) {
+  if ("dep" %in% loc) {
     res <- merge_with_name(res, deps, "code_dep", "DEP", cog_field, "dep_name")
   }
 
   # Merge commune names if requested
-  if (loc %in% c("both", "com")) {
+  if ("com" %in% loc) {
     res <- merge_with_name(res, coms, "insee", "COM", cog_field, "com_name")
   }
 
   # Keep only idu and requested name columns
   keep_cols <- c("idu")
-  if (loc %in% c("both", "reg"))   keep_cols <- c(keep_cols, "reg_name")
-  if (loc %in% c("both", "dep"))   keep_cols <- c(keep_cols, "dep_name")
-  if (loc %in% c("both", "com"))   keep_cols <- c(keep_cols, "com_name")
+  if ("reg" %in% loc)   keep_cols <- c(keep_cols, "reg_name")
+  if ("dep" %in% loc)   keep_cols <- c(keep_cols, "dep_name")
+  if ("com" %in% loc)   keep_cols <- c(keep_cols, "com_name")
 
   res[, intersect(keep_cols, names(res)), drop = FALSE]
 }
@@ -569,9 +469,9 @@ idu_get_name <- function(idu, loc = c("both", "reg", "dep", "com"), cog_field = 
 #' @param idu A `character` vector of valid IDU codes.
 #' @param with_lieudit `logical` (default: `TRUE`). Whether to retrieve and merge
 #'   lieu-dit names associated with the parcels.
-#' @param with_names `logical` (default: `TRUE`). Whether to retrieve and merge
+#' @param with_cog `logical` (default: `TRUE`). Whether to retrieve and merge
 #'   administrative names (region, department, commune) associated with the parcels.
-#' @param ... Additional arguments passed to [idu_get_name()].
+#' @param ... Additional arguments passed to [idu_get_cog()].
 #'
 #' @return An `sf` object containing parcel geometries, the IDU code, and optionally
 #'   associated lieu-dit names and administrative names.
@@ -580,8 +480,8 @@ idu_get_name <- function(idu, loc = c("both", "reg", "dep", "com"), cog_field = 
 #' - All IDU codes are validated before any data is retrieved.
 #' - If `with_lieudit = TRUE`, the function performs a spatial join with the
 #'   Etalab "lieux-dits" dataset and merges the names into the parcel data.
-#' - If `with_names = TRUE`, the function retrieves region, department, and commune
-#'   names using [idu_get_name()] and merges them into the parcel data.
+#' - If `with_cog = TRUE`, the function retrieves region, department, and commune
+#'   names using [idu_get_cog()] and merges them into the parcel data.
 #' - The function ensures that Etalab data are returned as `sf` objects.
 #'
 #' @importFrom sf st_join st_drop_geometry
@@ -595,14 +495,14 @@ idu_get_name <- function(idu, loc = c("both", "reg", "dep", "com"), cog_field = 
 #' idu_get_parcelle("721870000A0001", with_lieudit = FALSE)
 #'
 #' # Retrieve parcels without administrative names
-#' idu_get_parcelle("721870000A0001", with_names = FALSE)
+#' idu_get_parcelle("721870000A0001", with_cog = FALSE)
 #' }
 #'
 #' @export
 #'
-idu_get_parcelle <- function(idu, with_lieudit = TRUE, with_names = TRUE, ...) {
+idu_get_parcelle <- function(idu, with_lieudit = TRUE, with_cog = TRUE, ...) {
   # Validate IDUs
-  idu_assert(idu)
+  idu_check(idu)
 
   # Split IDU and extract unique INSEE codes
   idu_parts   <- idu_split(idu)
@@ -648,8 +548,8 @@ idu_get_parcelle <- function(idu, with_lieudit = TRUE, with_names = TRUE, ...) {
   }
 
   # Retrieve parcel names if requested
-  if (with_names) {
-    names_df <- idu_get_name(idu, ...)
+  if (with_cog) {
+    names_df <- idu_get_cog(idu, ...)
     new_cols <- setdiff(names(names_df), "idu")
 
     parcelles <- merge_with_name(

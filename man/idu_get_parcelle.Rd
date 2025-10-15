@@ -4,7 +4,7 @@
 \alias{idu_get_parcelle}
 \title{Retrieve parcel data for given IDUs}
 \usage{
-idu_get_parcelle(idu, with_lieudit = TRUE, with_names = TRUE, ...)
+idu_get_parcelle(idu, with_lieudit = TRUE, with_cog = TRUE, ...)
 }
 \arguments{
 \item{idu}{A \code{character} vector of valid IDU codes.}
@@ -12,10 +12,10 @@ idu_get_parcelle(idu, with_lieudit = TRUE, with_names = TRUE, ...)
 \item{with_lieudit}{\code{logical} (default: \code{TRUE}). Whether to retrieve and merge
 lieu-dit names associated with the parcels.}
 
-\item{with_names}{\code{logical} (default: \code{TRUE}). Whether to retrieve and merge
+\item{with_cog}{\code{logical} (default: \code{TRUE}). Whether to retrieve and merge
 administrative names (region, department, commune) associated with the parcels.}
 
-\item{...}{Additional arguments passed to \code{\link[=idu_get_name]{idu_get_name()}}.}
+\item{...}{Additional arguments passed to \code{\link[=idu_get_cog]{idu_get_cog()}}.}
 }
 \value{
 An \code{sf} object containing parcel geometries, the IDU code, and optionally
@@ -32,8 +32,8 @@ the parcels and requested attributes.
 \item All IDU codes are validated before any data is retrieved.
 \item If \code{with_lieudit = TRUE}, the function performs a spatial join with the
 Etalab "lieux-dits" dataset and merges the names into the parcel data.
-\item If \code{with_names = TRUE}, the function retrieves region, department, and commune
-names using \code{\link[=idu_get_name]{idu_get_name()}} and merges them into the parcel data.
+\item If \code{with_cog = TRUE}, the function retrieves region, department, and commune
+names using \code{\link[=idu_get_cog]{idu_get_cog()}} and merges them into the parcel data.
 \item The function ensures that Etalab data are returned as \code{sf} objects.
 }
 }
@@ -46,7 +46,7 @@ idu_get_parcelle(c("721870000A0001", "721870000A0002"))
 idu_get_parcelle("721870000A0001", with_lieudit = FALSE)
 
 # Retrieve parcels without administrative names
-idu_get_parcelle("721870000A0001", with_names = FALSE)
+idu_get_parcelle("721870000A0001", with_cog = FALSE)
 }
 
 }

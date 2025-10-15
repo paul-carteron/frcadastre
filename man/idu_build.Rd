@@ -4,20 +4,15 @@
 \alias{idu_build}
 \title{Build IDUs from their components}
 \usage{
-idu_build(dep = NULL, com, prefix, section, numero)
+idu_build(dep, com, prefix, section, numero)
 }
 \arguments{
-\item{dep}{\code{character} or \code{NULL}. Department code.
-Must be 2 characters (e.g., \code{"01"}, \code{"95"}, \code{"2A"}, \code{"2B"}),
-or 3 characters for overseas departments (\code{"971"}–\code{"978"}).
-Optional if \code{com} already contains the full 5-character commune code.}
+\item{dep}{\code{character}. Department code (mandatory).
+Must be 2 characters (e.g., \code{"01"}, \code{"95"}, \code{"2A"}, \code{"2B"})
+or 3 characters for overseas departments (\code{"971"}–\code{"978"}).}
 
-\item{com}{\code{character}. Commune code.
-\itemize{
-\item If length 5: full INSEE commune code (department already included).
-\item If length 3: commune code within a metropolitan department (requires \code{dep}).
-\item If length 2: commune code within an overseas department (requires \code{dep}).
-}}
+\item{com}{\code{character}. Commune code within the department.
+Must be 3 characters for metropolitan France, or 2 characters for overseas departments.}
 
 \item{prefix}{\code{character}. Prefix code (3 characters, zero-padded).}
 
@@ -36,23 +31,12 @@ from department, commune, prefix, section, and parcel number.
 \itemize{
 \item All input vectors must have the same length.
 \item The function automatically zero-pads and uppercases fields where required.
-\item Input is validated against INSEE commune and department codes.
+\item Both \code{dep} and \code{com} are required.
 }
 }
 \examples{
 \dontrun{
-# With separate department and commune codes
 idu_build(dep = "72", com = "187", prefix = "000", section = "A", numero = "1")
-
-# With commune code including department
-idu_build(com = "72187", prefix = "000", section = "A", numero = "1")
-
-# With a plots dataframe
-parcelle <- get_etalab(72187)
-parcelle$idu <- idu_build(com = parcelle$commune,
-                          prefix=parcelle$prefixe,
-                          section=parcelle$section,
-                          numero=parcelle$numero)
 }
 
 }

@@ -4,28 +4,47 @@
 \alias{idu_check}
 \title{Check if a vector contains valid IDUs}
 \usage{
-idu_check(x)
+idu_check(x, error = TRUE)
 }
 \arguments{
-\item{x}{A character vector to validate.}
+\item{x}{A character vector containing IDU codes to validate.}
+
+\item{error}{Logical. If \code{TRUE} (default), the function stops with an error
+message when invalid IDUs are detected. If \code{FALSE}, it returns a logical
+vector indicating which entries are valid.}
 }
 \value{
-A logical vector, TRUE for valid IDU entries.
+If \code{error = FALSE}, a logical vector indicating which elements of \code{x} are valid.
+If \code{error = TRUE}, the function stops when invalid codes are found and
+invisibly returns \code{TRUE} otherwise.
 }
 \description{
-Check if a vector contains valid IDUs
+This function checks whether a character vector contains valid INSEE
+cadastral parcel identifiers (IDUs). It can either return a logical
+vector indicating validity or raise an error if invalid entries are found.
 }
 \details{
-An IDU is defined as:
+A valid IDU (INSEE cadastral identifier) must satisfy all of the following:
 \itemize{
-\item A \code{character} vector of length 14 for all entries
-\item First 1 characters: department -> digits (0–9)
-\item Next 1 characters: department -> digits (0–9) or uppercase letters 'A'/'B'
-\item Next 3 characters: commune -> digits (0–9)
-\item Next 3 characters: prefixe -> digits (0–9)
-\item Next 2 characters: section -> digits (0–9) or uppercase letters (A–Z)
-\item Last 4 characters: numero -> digits (0–9)
-\item No missing values (NA) or empty strings
-\item No lowercase letters or special characters
+\item Be a non-missing, non-empty string of length 14.
+\item The first two characters: department code — digits (0–9) or letters 'A'/'B'.
+\item The next three characters: commune code — digits (0–9).
+\item The next three characters: prefix — digits (0–9).
+\item The next two characters: section — digits (0–9) or uppercase letters (A–Z).
+\item The last four characters: parcel number — digits (0–9).
+\item Contain no lowercase letters or special characters.
 }
+}
+\examples{
+\dontrun{
+# Valid IDU
+idu_check("01001000AA0123")
+
+# Multiple values
+idu_check(c("01001000AA0123", "AB12300000A0123"), error = FALSE)
+
+# Invalid example (will throw an error)
+idu_check(c("01001000AA0123", "12345"))
+}
+
 }

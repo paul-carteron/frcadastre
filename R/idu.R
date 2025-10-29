@@ -165,9 +165,6 @@ idu_split <- function(idu) {
 #' vector indicating validity or raise an error if invalid entries are found.
 #'
 #' @param x A character vector containing IDU codes to validate.
-#' @param error Logical. If `TRUE` (default), the function stops with an error
-#'   message when invalid IDUs are detected. If `FALSE`, it returns a logical
-#'   vector indicating which entries are valid.
 #'
 #' @details
 #' A valid IDU (INSEE cadastral identifier) must satisfy all of the following:
@@ -182,9 +179,7 @@ idu_split <- function(idu) {
 #' }
 #'
 #' @return
-#' If `error = FALSE`, a logical vector indicating which elements of `x` are valid.
-#' If `error = TRUE`, the function stops when invalid codes are found and
-#' invisibly returns `TRUE` otherwise.
+#' Invisibly returns `TRUE` if all IDUs are valid; otherwise, stops with an error.
 #'
 #' @examples
 #' \dontrun{
@@ -192,7 +187,7 @@ idu_split <- function(idu) {
 #' idu_check("01001000AA0123")
 #'
 #' # Multiple values
-#' idu_check(c("01001000AA0123", "AB12300000A0123"), error = FALSE)
+#' idu_check(c("01001000AA0123", "AB12300000A0123"))
 #'
 #' # Invalid example (will throw an error)
 #' idu_check(c("01001000AA0123", "12345"))
@@ -200,12 +195,12 @@ idu_split <- function(idu) {
 #'
 #' @export
 #'
-idu_check <- function(x, error = TRUE) {
+idu_check <- function(x) {
   x <- as.character(x)
   pattern <- "^[0-9AB]{2}[0-9]{3}[0-9]{3}[0-9A-Z]{2}[0-9]{4}$"
   valid <- !is.na(x) & x != "" & nchar(x) == 14 & grepl(pattern, x)
 
-  if (error && !all(valid)) {
+  if (!all(valid)) {
     stop(
       "Invalid IDU(s) detected: ",
       paste(x[!valid], collapse = ", "),
@@ -213,11 +208,7 @@ idu_check <- function(x, error = TRUE) {
     )
   }
 
-  if (error) {
-    invisible(TRUE)
-  } else {
-    valid
-  }
+  invisible(TRUE)
 }
 
 ### Manage IDU field in df section ----
@@ -306,27 +297,39 @@ idu_rename_in_df <- function(df, new_name) {
 }
 
 ### Get attribut IDU section ----
-#' Retrieve Etalab data for given IDUs
+#' Retrieve Etalab cadastral data for given IDUs
 #'
-#' This internal function downloads Etalab cadastral data corresponding to
-#' one or more IDU codes. It also splits the IDUs into their components for
-#' further processing.
+#' This internal function validates and processes one or more cadastral parcel
+#' identifiers (IDUs), extracts the corresponding INSEE commune codes, and
+#' retrieves the matching cadastral data from Etalab.
 #'
 #' @param idu A character vector of IDU codes (14-character format).
-#' @param layer Optional character string specifying a layer to retrieve.
-#'   If NULL, all layers are returned.
-#' @param verbose `logical`. If `TRUE`, prints progress messages.
+#'   All codes are validated before data retrieval.
+#' @param layer Optional character string specifying the cadastral layer to retrieve.
+#'   If `NULL`, all available layers are returned.
+#' @param verbose Logical. If `TRUE`, prints progress messages during data retrieval.
 #'
-#' @return A list containing:
-#' \describe{
-#'   \item{data}{An `sf` or `data.frame` object with the requested cadastral data.}
-#'   \item{idu_parts}{A data.frame with the components of the provided IDUs.}
-#' }
+#' @return
+#' The cadastral data retrieved from Etalab for the communes
+#' corresponding to the provided IDUs.
+#' The return type depends on `get_etalab()`:
+#' typically an `sf` or `data.frame` object.
+#'
+#' @details
+#' This function ensures that all provided IDUs are valid using [idu_check()],
+#' extracts their components via [idu_split()], and determines the relevant
+#' INSEE commune codes to pass to [get_etalab()].
 #'
 #' @examples
 #' \dontrun{
-#' get_etalab_data_by_idu("72181000AB01")
-#' get_etalab_data_by_idu(c("72181000AB01", "72181000AB02"), layer = "parcelles")
+#' # Retrieve data for a single IDU
+#' get_etalab_data_by_idu("72181000AB0001")
+#'
+#' # Retrieve data for multiple IDUs within the same commune
+#' get_etalab_data_by_idu(
+#'   c("72181000AB0001", "72181000AB0002"),
+#'   layer = "parcelles"
+#' )
 #' }
 #'
 #' @keywords internal
@@ -338,9 +341,8 @@ get_etalab_data_by_idu <- function(idu,
   idu_parts <- idu_split(idu)
   insee_codes <- unique(idu_parts$insee)
 
-  data <- get_etalab(insee_codes, layer, verbose = verbose)
-
-  list(data = data, idu_parts = idu_parts)
+  res <- get_etalab(insee_codes, layer, verbose = verbose)
+  res
 }
 
 #' Retrieve cadastral sheets IDs for given IDUs
@@ -402,10 +404,14 @@ idu_get_feuille <- function(idu, result_as_list = FALSE) {
 #' corresponding region, department, and/or commune names.
 #'
 #' @param idu A `character` vector of valid IDU codes.
-#' @param loc A `character` string specifying which location levels to include.
-#' One of `"reg"`, `"dep"`, or `"com"`.
-#' @param cog_field `character`. Défaut is `"NCC"`.
-#' The name of the field in the reference datasets to use.
+#' @param loc A `character` vector specifying which location levels to include.
+#' One or more of `"reg"`, `"dep"`, or `"com"`. Multiple values can be
+#' provided simultaneously (e.g., `loc = c("reg", "dep", "com")`).
+#' @param cog_field A single `character` string specifying the field name
+#' in the reference datasets to use for naming. Must be one of `"NCC"`,
+#' `"NCCENR"`, or `"LIBELLE"`. Default is `"NCC"`.
+#'
+#' @seealso [commune_2025, departement_2025, region_2025]
 #'
 #' @return A `data.frame` with the IDU split into its components and
 #' the requested location names.
@@ -420,6 +426,7 @@ idu_get_feuille <- function(idu, result_as_list = FALSE) {
 idu_get_cog <- function(idu, loc = c("reg", "dep", "com"), cog_field = "NCC") {
   # Match argument
   loc <- match.arg(loc, c("reg", "dep", "com"), several.ok = TRUE)
+  cog_field <- match.arg(cog_field, c("NCC", "NCCENR", "LIBELLE"), several.ok = FALSE)
 
   # Validate IDUs
   idu_check(idu)
